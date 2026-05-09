@@ -1,0 +1,10 @@
+{
+    "name": "kindalist",
+    "private": true,
+    "workspaces": ["apps/*"],
+    "scripts": {
+      "dev:backend": "npm run dev --workspace=apps/backend",
+      "dev:frontend": "npm run dev --workspace=apps/frontend",
+      "test": "npm run test --workspace=apps/backend"
+    }
+}
