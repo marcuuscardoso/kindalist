@@ -1,1 +1,5 @@
-export { TaskPriority } from '@prisma/client'
+export enum TaskPriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}
