@@ -57,4 +57,22 @@ describe('DeleteListUseCase', () => {
       UnauthorizedException,
     )
   })
+
+  it('should not call listRepository.delete when user is not owner', async () => {
+    mockListRepository.findById.mockResolvedValue({
+      id: 'list-id',
+      title: 'Work',
+      description: null,
+      isArchived: false,
+      userId: 'owner-id',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+
+    await expect(usecase.execute({ id: 'list-id', userId: 'other-user-id' })).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    )
+
+    expect(mockListRepository.delete).not.toHaveBeenCalled()
+  })
 })

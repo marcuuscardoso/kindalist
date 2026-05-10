@@ -61,4 +61,22 @@ describe('UpdateListUseCase', () => {
       UnauthorizedException,
     )
   })
+
+  it('should not call listRepository.update when user is not owner', async () => {
+    mockListRepository.findById.mockResolvedValue({
+      id: 'list-id',
+      title: 'Work',
+      description: null,
+      isArchived: false,
+      userId: 'owner-id',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+
+    await expect(usecase.execute({ id: 'list-id', userId: 'other-user-id', title: 'Personal' })).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    )
+
+    expect(mockListRepository.update).not.toHaveBeenCalled()
+  })
 })

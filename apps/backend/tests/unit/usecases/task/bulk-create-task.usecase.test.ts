@@ -51,10 +51,36 @@ describe('BulkCreateTaskUseCase', () => {
     expect(output).toEqual({ count: 2 })
   })
 
+  it('should create tasks when array has exactly 1000 records', async () => {
+    const tasks = Array.from({ length: 1000 }, (_, index) => ({ title: `Task ${index}` }))
+    mockListRepository.findById.mockResolvedValue({
+      id: 'list-id',
+      title: 'Work',
+      description: null,
+      isArchived: false,
+      userId: 'user-id',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+    mockTaskRepository.createMany.mockResolvedValue(1000)
+
+    const output = await usecase.execute({ userId: 'user-id', listId: 'list-id', tasks })
+
+    expect(output).toEqual({ count: 1000 })
+  })
+
   it('should throw ValidationException when array is empty', async () => {
     await expect(usecase.execute({ userId: 'user-id', listId: 'list-id', tasks: [] })).rejects.toBeInstanceOf(
       ValidationException,
     )
+  })
+
+  it('should not call taskRepository when array is empty', async () => {
+    await expect(usecase.execute({ userId: 'user-id', listId: 'list-id', tasks: [] })).rejects.toBeInstanceOf(
+      ValidationException,
+    )
+
+    expect(mockTaskRepository.createMany).not.toHaveBeenCalled()
   })
 
   it('should throw ValidationException when array exceeds 1000 records', async () => {
@@ -63,6 +89,16 @@ describe('BulkCreateTaskUseCase', () => {
     await expect(usecase.execute({ userId: 'user-id', listId: 'list-id', tasks })).rejects.toBeInstanceOf(
       ValidationException,
     )
+  })
+
+  it('should not call taskRepository when array exceeds 1000 records', async () => {
+    const tasks = Array.from({ length: 1001 }, (_, index) => ({ title: `Task ${index}` }))
+
+    await expect(usecase.execute({ userId: 'user-id', listId: 'list-id', tasks })).rejects.toBeInstanceOf(
+      ValidationException,
+    )
+
+    expect(mockTaskRepository.createMany).not.toHaveBeenCalled()
   })
 
   it('should throw NotFoundException when list does not exist', async () => {

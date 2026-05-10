@@ -82,4 +82,22 @@ describe('CreateTaskUseCase', () => {
       UnauthorizedException,
     )
   })
+
+  it('should not call taskRepository.create when user is not owner of the list', async () => {
+    mockListRepository.findById.mockResolvedValue({
+      id: 'list-id',
+      title: 'Work',
+      description: null,
+      isArchived: false,
+      userId: 'owner-id',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+
+    await expect(usecase.execute({ userId: 'other-user-id', listId: 'list-id', title: 'Task' })).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    )
+
+    expect(mockTaskRepository.create).not.toHaveBeenCalled()
+  })
 })

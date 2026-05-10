@@ -1,5 +1,7 @@
 import { LoginUseCase } from '@/core/application/usecases/auth/login/login.usecase'
+import { PasswordHasherPort } from '@/core/application/ports/output/password-hasher.port'
 import { SessionRepositoryPort } from '@/core/application/ports/output/session.repository.port'
+import { TokenServicePort } from '@/core/application/ports/output/token-service.port'
 import { UserRepositoryPort } from '@/core/application/ports/output/user.repository.port'
 import { NotFoundException } from '@/core/domain/errors/not-found.error'
 import { Role } from '@/core/domain/enums/user-role.enum'
@@ -13,10 +15,19 @@ const mockUserRepository: jest.Mocked<UserRepositoryPort> = {
 
 const mockSessionRepository: jest.Mocked<SessionRepositoryPort> = {
   findById: jest.fn(),
-  findByRefreshToken: jest.fn(),
   create: jest.fn(),
   updateLastUsedAt: jest.fn(),
   delete: jest.fn(),
+}
+
+const mockPasswordHasher: jest.Mocked<PasswordHasherPort> = {
+  hash: jest.fn(),
+  compare: jest.fn(),
+}
+
+const mockTokenService: jest.Mocked<TokenServicePort> = {
+  generateAccessToken: jest.fn(),
+  generateRefreshToken: jest.fn(),
 }
 
 describe('LoginUseCase', () => {
@@ -24,7 +35,7 @@ describe('LoginUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    usecase = new LoginUseCase(mockUserRepository, mockSessionRepository)
+    usecase = new LoginUseCase(mockUserRepository, mockSessionRepository, mockPasswordHasher, mockTokenService)
   })
 
   it('should return access and refresh tokens when credentials are valid', async () => {
@@ -82,5 +93,65 @@ describe('LoginUseCase', () => {
         password: 'wrong-password',
       }),
     ).rejects.toBeInstanceOf(ValidationException)
+  })
+
+  it('should call passwordHasher.compare with plain password and stored hash', async () => {
+    mockUserRepository.findByEmail.mockResolvedValue({
+      id: 'user-id',
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'hashed-password',
+      role: Role.MEMBER,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+    mockPasswordHasher.compare.mockResolvedValue(true)
+
+    await usecase.execute({
+      email: 'john@example.com',
+      password: 'plain-password',
+    })
+
+    expect(mockPasswordHasher.compare).toHaveBeenCalledWith('plain-password', 'hashed-password')
+  })
+
+  it('should call tokenService.generateAccessToken with userId and role', async () => {
+    mockUserRepository.findByEmail.mockResolvedValue({
+      id: 'user-id',
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'hashed-password',
+      role: Role.MEMBER,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+    mockPasswordHasher.compare.mockResolvedValue(true)
+
+    await usecase.execute({
+      email: 'john@example.com',
+      password: 'plain-password',
+    })
+
+    expect(mockTokenService.generateAccessToken).toHaveBeenCalledWith({ userId: 'user-id', role: Role.MEMBER })
+  })
+
+  it('should call tokenService.generateRefreshToken', async () => {
+    mockUserRepository.findByEmail.mockResolvedValue({
+      id: 'user-id',
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'hashed-password',
+      role: Role.MEMBER,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+    mockPasswordHasher.compare.mockResolvedValue(true)
+
+    await usecase.execute({
+      email: 'john@example.com',
+      password: 'plain-password',
+    })
+
+    expect(mockTokenService.generateRefreshToken).toHaveBeenCalled()
   })
 })

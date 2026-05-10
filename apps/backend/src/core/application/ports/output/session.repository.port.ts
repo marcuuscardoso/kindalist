@@ -19,7 +19,6 @@ export type CreateSessionData = {
 
 export interface SessionRepositoryPort {
   findById(id: string): Promise<Session | null>
-  findByRefreshToken(refreshToken: string): Promise<Session | null>
   create(data: CreateSessionData): Promise<Session>
   updateLastUsedAt(id: string, lastUsedAt: Date): Promise<Session>
   delete(id: string): Promise<void>

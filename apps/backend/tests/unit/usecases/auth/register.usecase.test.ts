@@ -1,5 +1,7 @@
 import { RegisterUseCase } from '@/core/application/usecases/auth/register/register.usecase'
+import { PasswordHasherPort } from '@/core/application/ports/output/password-hasher.port'
 import { SessionRepositoryPort } from '@/core/application/ports/output/session.repository.port'
+import { TokenServicePort } from '@/core/application/ports/output/token-service.port'
 import { UserRepositoryPort } from '@/core/application/ports/output/user.repository.port'
 import { ConflictException } from '@/core/domain/errors/conflict.error'
 import { Role } from '@/core/domain/enums/user-role.enum'
@@ -12,10 +14,19 @@ const mockUserRepository: jest.Mocked<UserRepositoryPort> = {
 
 const mockSessionRepository: jest.Mocked<SessionRepositoryPort> = {
   findById: jest.fn(),
-  findByRefreshToken: jest.fn(),
   create: jest.fn(),
   updateLastUsedAt: jest.fn(),
   delete: jest.fn(),
+}
+
+const mockPasswordHasher: jest.Mocked<PasswordHasherPort> = {
+  hash: jest.fn(),
+  compare: jest.fn(),
+}
+
+const mockTokenService: jest.Mocked<TokenServicePort> = {
+  generateAccessToken: jest.fn(),
+  generateRefreshToken: jest.fn(),
 }
 
 describe('RegisterUseCase', () => {
@@ -23,7 +34,7 @@ describe('RegisterUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    usecase = new RegisterUseCase(mockUserRepository, mockSessionRepository)
+    usecase = new RegisterUseCase(mockUserRepository, mockSessionRepository, mockPasswordHasher, mockTokenService)
   })
 
   it('should create user and return access and refresh tokens when input is valid', async () => {
@@ -74,5 +85,87 @@ describe('RegisterUseCase', () => {
         password: 'plain-password',
       }),
     ).rejects.toBeInstanceOf(ConflictException)
+  })
+
+  it('should call passwordHasher.hash with plain password', async () => {
+    mockUserRepository.findByEmail.mockResolvedValue(null)
+    mockPasswordHasher.hash.mockResolvedValue('hashed-password')
+
+    await usecase.execute({
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'plain-password',
+    })
+
+    expect(mockPasswordHasher.hash).toHaveBeenCalledWith('plain-password')
+  })
+
+  it('should call tokenService.generateAccessToken with userId and role', async () => {
+    mockUserRepository.findByEmail.mockResolvedValue(null)
+    mockPasswordHasher.hash.mockResolvedValue('hashed-password')
+    mockUserRepository.create.mockResolvedValue({
+      id: 'user-id',
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'hashed-password',
+      role: Role.MEMBER,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+
+    await usecase.execute({
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'plain-password',
+    })
+
+    expect(mockTokenService.generateAccessToken).toHaveBeenCalledWith({ userId: 'user-id', role: Role.MEMBER })
+  })
+
+  it('should call tokenService.generateRefreshToken', async () => {
+    mockUserRepository.findByEmail.mockResolvedValue(null)
+    mockPasswordHasher.hash.mockResolvedValue('hashed-password')
+    mockUserRepository.create.mockResolvedValue({
+      id: 'user-id',
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'hashed-password',
+      role: Role.MEMBER,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+
+    await usecase.execute({
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'plain-password',
+    })
+
+    expect(mockTokenService.generateRefreshToken).toHaveBeenCalled()
+  })
+
+  it('should call sessionRepository.create with hashed refresh token, not raw', async () => {
+    mockUserRepository.findByEmail.mockResolvedValue(null)
+    mockPasswordHasher.hash.mockResolvedValueOnce('hashed-password').mockResolvedValueOnce('hashed-refresh-token')
+    mockTokenService.generateRefreshToken.mockReturnValue('raw-refresh-token')
+    mockUserRepository.create.mockResolvedValue({
+      id: 'user-id',
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'hashed-password',
+      role: Role.MEMBER,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+
+    await usecase.execute({
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'plain-password',
+    })
+
+    expect(mockSessionRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ refreshToken: 'hashed-refresh-token' }),
+    )
   })
 })
