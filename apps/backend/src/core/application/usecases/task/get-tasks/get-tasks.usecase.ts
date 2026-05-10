@@ -1,6 +1,8 @@
 import { GetTasksUseCasePort } from '@/core/application/ports/input/task.usecase.port'
 import { ListRepositoryPort } from '@/core/application/ports/output/list.repository.port'
 import { TaskRepositoryPort } from '@/core/application/ports/output/task.repository.port'
+import { NotFoundException } from '@/core/domain/errors/not-found.error'
+import { UnauthorizedException } from '@/core/domain/errors/unauthorized.error'
 import { GetTasksInput } from './get-tasks.input'
 import { GetTasksOutput } from './get-tasks.output'
 
@@ -11,6 +13,10 @@ export class GetTasksUseCase implements GetTasksUseCasePort {
   ) {}
 
   async execute(input: GetTasksInput): Promise<GetTasksOutput> {
-    throw new Error('Not implemented')
+    const list = await this.listRepository.findById(input.listId)
+    if (!list) throw new NotFoundException('List')
+    if (list.userId !== input.userId) throw new UnauthorizedException()
+
+    return this.taskRepository.findManyByListId(input.listId)
   }
 }

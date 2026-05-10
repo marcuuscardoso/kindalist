@@ -7,6 +7,6 @@ export class GetListsUseCase implements GetListsUseCasePort {
   constructor(private readonly listRepository: ListRepositoryPort) {}
 
   async execute(input: GetListsInput): Promise<GetListsOutput> {
-    throw new Error('Not implemented')
+    return this.listRepository.findManyByUserId(input.userId, input.archived)
   }
 }

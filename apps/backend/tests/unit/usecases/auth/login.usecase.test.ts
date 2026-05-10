@@ -35,6 +35,10 @@ describe('LoginUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockPasswordHasher.hash.mockResolvedValue('hashed-refresh-token')
+    mockPasswordHasher.compare.mockResolvedValue(true)
+    mockTokenService.generateAccessToken.mockReturnValue('access-token')
+    mockTokenService.generateRefreshToken.mockReturnValue('raw-refresh-token')
     usecase = new LoginUseCase(mockUserRepository, mockSessionRepository, mockPasswordHasher, mockTokenService)
   })
 
@@ -86,6 +90,7 @@ describe('LoginUseCase', () => {
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     })
+    mockPasswordHasher.compare.mockResolvedValue(false)
 
     await expect(
       usecase.execute({

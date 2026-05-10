@@ -7,6 +7,10 @@ export class CreateListUseCase implements CreateListUseCasePort {
   constructor(private readonly listRepository: ListRepositoryPort) {}
 
   async execute(input: CreateListInput): Promise<CreateListOutput> {
-    throw new Error('Not implemented')
+    return this.listRepository.create({
+      userId: input.userId,
+      title: input.title,
+      description: input.description ?? null,
+    })
   }
 }

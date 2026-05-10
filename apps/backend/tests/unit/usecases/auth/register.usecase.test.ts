@@ -34,6 +34,9 @@ describe('RegisterUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockPasswordHasher.hash.mockResolvedValue('hashed-value')
+    mockTokenService.generateAccessToken.mockReturnValue('access-token')
+    mockTokenService.generateRefreshToken.mockReturnValue('raw-refresh-token')
     usecase = new RegisterUseCase(mockUserRepository, mockSessionRepository, mockPasswordHasher, mockTokenService)
   })
 
@@ -98,6 +101,23 @@ describe('RegisterUseCase', () => {
     })
 
     expect(mockPasswordHasher.hash).toHaveBeenCalledWith('plain-password')
+  })
+
+  it('should create user with member role when input is valid', async () => {
+    mockUserRepository.findByEmail.mockResolvedValue(null)
+    mockPasswordHasher.hash.mockResolvedValue('hashed-password')
+
+    await usecase.execute({
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'plain-password',
+    })
+
+    expect(mockUserRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: Role.MEMBER,
+      }),
+    )
   })
 
   it('should call tokenService.generateAccessToken with userId and role', async () => {
