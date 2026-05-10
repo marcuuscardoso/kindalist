@@ -40,7 +40,7 @@ describe('BulkCreateTaskUseCase', () => {
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     })
-    mockTaskRepository.createMany.mockResolvedValue(2)
+    mockTaskRepository.createMany.mockResolvedValue({ count: 2 })
 
     const output = await usecase.execute({
       userId: 'user-id',
@@ -62,7 +62,7 @@ describe('BulkCreateTaskUseCase', () => {
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     })
-    mockTaskRepository.createMany.mockResolvedValue(1000)
+    mockTaskRepository.createMany.mockResolvedValue({ count: 1000 })
 
     const output = await usecase.execute({ userId: 'user-id', listId: 'list-id', tasks })
 

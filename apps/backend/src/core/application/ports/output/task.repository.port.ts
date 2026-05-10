@@ -23,7 +23,7 @@ export interface TaskRepositoryPort {
   findById(id: string): Promise<Task | null>
   findManyByListId(listId: string): Promise<Task[]>
   create(data: CreateTaskData): Promise<Task>
-  createMany(data: CreateTaskData[]): Promise<number>
+  createMany(data: CreateTaskData[]): Promise<{ count: number }>
   update(id: string, data: UpdateTaskData): Promise<Task>
   delete(id: string): Promise<void>
 }

@@ -37,7 +37,7 @@ export class BulkCreateTaskUseCase implements BulkCreateTaskUseCasePort {
       }),
     )
 
-    const count = await this.taskRepository.createMany(tasks)
+    const { count } = await this.taskRepository.createMany(tasks)
 
     return { count }
   }

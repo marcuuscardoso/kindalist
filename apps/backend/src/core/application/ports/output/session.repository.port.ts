@@ -1,13 +1,4 @@
-export type Session = {
-  id: string
-  userId: string
-  refreshToken: string
-  userAgent: string | null
-  ipAddress: string | null
-  lastUsedAt: Date
-  expiresAt: Date
-  createdAt: Date
-}
+import { Session } from '@/core/domain/entities/session.entity'
 
 export type CreateSessionData = {
   userId: string
