@@ -172,4 +172,78 @@ describe('ListController', () => {
     })
     expect(res.status).toHaveBeenCalledWith(200)
   })
+
+  it('should return 200 when update succeeds', async () => {
+    const output = {
+      id: 'list-id',
+      title: 'Updated list',
+      description: null,
+      isArchived: false,
+      userId: 'user-id',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    }
+    const req = createRequest({
+      body: { title: 'Updated list' },
+      params: { listId: 'list-id' },
+    })
+    const res = createResponse()
+
+    mockUpdateListUseCase.execute.mockResolvedValue(output)
+
+    await controller.update(req, res)
+
+    expect(mockUpdateListUseCase.execute).toHaveBeenCalledWith({
+      id: 'list-id',
+      userId: 'user-id',
+      title: 'Updated list',
+    })
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('should return 200 when archive succeeds', async () => {
+    const output = {
+      id: 'list-id',
+      title: 'My list',
+      description: null,
+      isArchived: true,
+      userId: 'user-id',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    }
+    const req = createRequest({
+      body: { isArchived: true },
+      params: { listId: 'list-id' },
+    })
+    const res = createResponse()
+
+    mockArchiveListUseCase.execute.mockResolvedValue(output)
+
+    await controller.archive(req, res)
+
+    expect(mockArchiveListUseCase.execute).toHaveBeenCalledWith({
+      id: 'list-id',
+      userId: 'user-id',
+      isArchived: true,
+    })
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('should return 200 when delete succeeds', async () => {
+    const output = { success: true }
+    const req = createRequest({
+      params: { listId: 'list-id' },
+    })
+    const res = createResponse()
+
+    mockDeleteListUseCase.execute.mockResolvedValue(output)
+
+    await controller.delete(req, res)
+
+    expect(mockDeleteListUseCase.execute).toHaveBeenCalledWith({
+      id: 'list-id',
+      userId: 'user-id',
+    })
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
 })

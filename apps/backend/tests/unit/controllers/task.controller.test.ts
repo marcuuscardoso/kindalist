@@ -189,4 +189,72 @@ describe('TaskController', () => {
     })
     expect(res.status).toHaveBeenCalledWith(200)
   })
+
+  it('should return 201 when bulkCreate succeeds', async () => {
+    const output = { count: 2 }
+    const req = createRequest({
+      body: {
+        tasks: [{ title: 'Task 1' }, { title: 'Task 2' }],
+      },
+    })
+    const res = createResponse()
+
+    mockBulkCreateTaskUseCase.execute.mockResolvedValue(output)
+
+    await controller.bulkCreate(req, res)
+
+    expect(mockBulkCreateTaskUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-id',
+      listId: 'list-id',
+      tasks: [{ title: 'Task 1' }, { title: 'Task 2' }],
+    })
+    expect(res.status).toHaveBeenCalledWith(201)
+  })
+
+  it('should return 200 when getMany succeeds', async () => {
+    const output = [
+      {
+        id: 'task-id',
+        title: 'My task',
+        description: null,
+        status: TaskStatus.TODO,
+        priority: TaskPriority.MEDIUM,
+        deadline: null,
+        listId: 'list-id',
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      },
+    ]
+    const req = createRequest({})
+    const res = createResponse()
+
+    mockGetTasksUseCase.execute.mockResolvedValue(output)
+
+    await controller.getMany(req, res)
+
+    expect(mockGetTasksUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-id',
+      listId: 'list-id',
+    })
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('should return 200 when delete succeeds', async () => {
+    const output = { success: true }
+    const req = createRequest({
+      params: { listId: 'list-id', taskId: 'task-id' },
+    })
+    const res = createResponse()
+
+    mockDeleteTaskUseCase.execute.mockResolvedValue(output)
+
+    await controller.delete(req, res)
+
+    expect(mockDeleteTaskUseCase.execute).toHaveBeenCalledWith({
+      id: 'task-id',
+      userId: 'user-id',
+      listId: 'list-id',
+    })
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
 })

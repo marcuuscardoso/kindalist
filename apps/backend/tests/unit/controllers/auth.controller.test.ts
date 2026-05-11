@@ -78,6 +78,24 @@ describe('AuthController', () => {
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
+  it('should return 400 when login body is invalid', async () => {
+    const req = createRequest({ body: { email: 'invalid-email' } })
+    const res = createResponse()
+
+    await executeWithErrorHandler(() => controller.login(req, res), res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+  })
+
+  it('should return 400 when refresh body is invalid', async () => {
+    const req = createRequest({ body: {} })
+    const res = createResponse()
+
+    await executeWithErrorHandler(() => controller.refresh(req, res), res)
+
+    expect(res.status).toHaveBeenCalledWith(400)
+  })
+
   it('should return 409 when register usecase throws ConflictException', async () => {
     const req = createRequest({
       body: {
@@ -194,5 +212,29 @@ describe('AuthController', () => {
     await controller.refresh(req, res)
 
     expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('should return 200 when logout succeeds', async () => {
+    const output = { success: true }
+    const req = createRequest({
+      body: { sessionId: 'session-id' },
+      user: { userId: 'user-id', role: 'MEMBER' },
+    })
+    const res = createResponse()
+
+    mockLogoutUseCase.execute.mockResolvedValue(output)
+
+    await controller.logout(req, res)
+
+    expect(mockLogoutUseCase.execute).toHaveBeenCalledWith({
+      sessionId: 'session-id',
+      userId: 'user-id',
+    })
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({
+      status: 'success',
+      message: 'Success',
+      data: output,
+    })
   })
 })
