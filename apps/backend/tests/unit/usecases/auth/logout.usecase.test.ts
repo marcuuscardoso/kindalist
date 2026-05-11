@@ -6,7 +6,7 @@ import { UnauthorizedException } from '@/core/domain/errors/unauthorized.error'
 const mockSessionRepository: jest.Mocked<SessionRepositoryPort> = {
   findById: jest.fn(),
   create: jest.fn(),
-  updateLastUsedAt: jest.fn(),
+  update: jest.fn(),
   delete: jest.fn(),
 }
 

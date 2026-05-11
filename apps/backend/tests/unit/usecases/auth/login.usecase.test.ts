@@ -16,7 +16,7 @@ const mockUserRepository: jest.Mocked<UserRepositoryPort> = {
 const mockSessionRepository: jest.Mocked<SessionRepositoryPort> = {
   findById: jest.fn(),
   create: jest.fn(),
-  updateLastUsedAt: jest.fn(),
+  update: jest.fn(),
   delete: jest.fn(),
 }
 
@@ -39,6 +39,16 @@ describe('LoginUseCase', () => {
     mockPasswordHasher.compare.mockResolvedValue(true)
     mockTokenService.generateAccessToken.mockReturnValue('access-token')
     mockTokenService.generateRefreshToken.mockReturnValue('raw-refresh-token')
+    mockSessionRepository.create.mockResolvedValue({
+      id: 'session-id',
+      userId: 'user-id',
+      refreshToken: 'hashed-refresh-token',
+      userAgent: null,
+      ipAddress: null,
+      lastUsedAt: new Date('2026-01-01T00:00:00.000Z'),
+      expiresAt: new Date('2026-01-08T00:00:00.000Z'),
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
     usecase = new LoginUseCase(mockUserRepository, mockSessionRepository, mockPasswordHasher, mockTokenService)
   })
 
@@ -66,6 +76,7 @@ describe('LoginUseCase', () => {
       },
       accessToken: expect.any(String),
       refreshToken: expect.any(String),
+      sessionId: expect.any(String),
     })
   })
 

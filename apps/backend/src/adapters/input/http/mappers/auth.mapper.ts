@@ -34,6 +34,7 @@ export const authMapper = {
     ipAddress?: string | null,
   ): RefreshInput {
     return {
+      sessionId: body.sessionId,
       refreshToken: body.refreshToken,
       ...(userAgent !== undefined && { userAgent }),
       ...(ipAddress !== undefined && { ipAddress }),

@@ -33,7 +33,7 @@ export class RegisterUseCase implements RegisterUseCasePort {
     const rawRefreshToken = this.tokenService.generateRefreshToken()
     const hashedRefreshToken = await this.passwordHasher.hash(rawRefreshToken)
 
-    await this.sessionRepository.create({
+    const session = await this.sessionRepository.create({
       userId: user.id,
       refreshToken: hashedRefreshToken,
       userAgent: input.userAgent ?? null,
@@ -51,6 +51,7 @@ export class RegisterUseCase implements RegisterUseCasePort {
       },
       accessToken,
       refreshToken: rawRefreshToken,
+      sessionId: session.id,
     }
   }
 }

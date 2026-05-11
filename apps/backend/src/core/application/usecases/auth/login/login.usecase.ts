@@ -28,7 +28,7 @@ export class LoginUseCase implements LoginUseCasePort {
     const rawRefreshToken = this.tokenService.generateRefreshToken()
     const hashedRefreshToken = await this.passwordHasher.hash(rawRefreshToken)
 
-    await this.sessionRepository.create({
+    const session = await this.sessionRepository.create({
       userId: user.id,
       refreshToken: hashedRefreshToken,
       userAgent: input.userAgent ?? null,
@@ -46,6 +46,7 @@ export class LoginUseCase implements LoginUseCasePort {
       },
       accessToken,
       refreshToken: rawRefreshToken,
+      sessionId: session.id,
     }
   }
 }

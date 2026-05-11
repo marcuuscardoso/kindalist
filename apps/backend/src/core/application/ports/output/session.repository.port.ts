@@ -8,9 +8,17 @@ export type CreateSessionData = {
   expiresAt: Date
 }
 
+export type UpdateSessionData = {
+  refreshToken?: string
+  userAgent?: string | null
+  ipAddress?: string | null
+  lastUsedAt?: Date
+  expiresAt?: Date
+}
+
 export interface SessionRepositoryPort {
   findById(id: string): Promise<Session | null>
   create(data: CreateSessionData): Promise<Session>
-  updateLastUsedAt(id: string, lastUsedAt: Date): Promise<Session>
+  update(id: string, data: UpdateSessionData): Promise<Session>
   delete(id: string): Promise<void>
 }

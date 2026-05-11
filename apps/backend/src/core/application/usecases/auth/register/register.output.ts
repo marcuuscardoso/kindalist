@@ -6,4 +6,5 @@ export type RegisterOutput = {
   }
   accessToken: string
   refreshToken: string
+  sessionId: string
 }

@@ -6,4 +6,5 @@ export type LoginOutput = {
   }
   accessToken: string
   refreshToken: string
+  sessionId: string
 }

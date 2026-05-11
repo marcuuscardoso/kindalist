@@ -39,7 +39,7 @@ const registerUseCase = new RegisterUseCase(
 )
 const loginUseCase = new LoginUseCase(userRepository, sessionRepository, passwordHasher, tokenService)
 const logoutUseCase = new LogoutUseCase(sessionRepository)
-const refreshUseCase = new RefreshUseCase(sessionRepository, tokenService)
+const refreshUseCase = new RefreshUseCase(sessionRepository, userRepository, tokenService, passwordHasher)
 
 const createListUseCase = new CreateListUseCase(listRepository)
 const getListsUseCase = new GetListsUseCase(listRepository)

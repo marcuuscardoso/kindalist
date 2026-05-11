@@ -136,6 +136,7 @@ describe('AuthController', () => {
       },
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
+      sessionId: 'session-id',
     }
     const req = createRequest({
       body: {
@@ -174,6 +175,7 @@ describe('AuthController', () => {
       },
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
+      sessionId: 'session-id',
     }
     const req = createRequest({
       body: {
@@ -199,9 +201,11 @@ describe('AuthController', () => {
     const output = {
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
+      sessionId: 'session-id',
     }
     const req = createRequest({
       body: {
+        sessionId: 'session-id',
         refreshToken: 'refresh-token',
       },
     })

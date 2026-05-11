@@ -2,6 +2,7 @@ import { PrismaClient, Session as PrismaSession } from '@prisma/client'
 import {
   CreateSessionData,
   SessionRepositoryPort,
+  UpdateSessionData,
 } from '@/core/application/ports/output/session.repository.port'
 import { Session } from '@/core/domain/entities/session.entity'
 
@@ -31,10 +32,10 @@ export class SessionPrismaRepository implements SessionRepositoryPort {
     return this.toEntity(model)
   }
 
-  async updateLastUsedAt(id: string, lastUsedAt: Date): Promise<Session> {
+  async update(id: string, data: UpdateSessionData): Promise<Session> {
     const model = await this.prisma.session.update({
       where: { id },
-      data: { lastUsedAt },
+      data,
     })
     return this.toEntity(model)
   }
