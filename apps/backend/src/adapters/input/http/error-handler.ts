@@ -57,7 +57,7 @@ export const errorHandler: ErrorRequestHandler = (
 }
 
 export const errorMiddleware =
-  (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>): RequestHandler =>
+  (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown> | unknown): RequestHandler =>
   (req: Request, res: Response, next: NextFunction): void => {
     Promise.resolve(fn(req, res, next)).catch(next)
   }

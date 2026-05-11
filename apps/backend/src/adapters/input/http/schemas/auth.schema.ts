@@ -15,6 +15,11 @@ export const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 })
 
+export const logoutSchema = z.object({
+  sessionId: z.string().min(1),
+})
+
 export type RegisterSchema = z.infer<typeof registerSchema>
 export type LoginSchema = z.infer<typeof loginSchema>
 export type RefreshSchema = z.infer<typeof refreshSchema>
+export type LogoutSchema = z.infer<typeof logoutSchema>

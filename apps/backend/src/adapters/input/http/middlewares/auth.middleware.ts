@@ -1,8 +1,10 @@
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
+import { Role as UserRole } from '@/core/domain/enums/user-role.enum'
 import { env } from '@/infrastructure/config/env'
 import { apiResponse } from '@/shared/response/api-response'
+import { EAuthMethod } from '../routes/define-router'
 
 const authPayloadSchema = z.object({
   userId: z.string().min(1),
@@ -31,6 +33,11 @@ export const authenticationMiddleware = (req: Request, res: Response, next: Next
     req.user = {
       userId: payload.userId,
       role: payload.role,
+    }
+
+    if (req.auth?.method === EAuthMethod.PRIVATE && !req.auth.roles?.includes(payload.role as UserRole)) {
+      res.status(403).json(apiResponse.error('Unauthorized'))
+      return
     }
 
     next()

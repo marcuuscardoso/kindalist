@@ -1,7 +1,8 @@
 import { LoginInput } from '@/core/application/usecases/auth/login/login.input'
+import { LogoutInput } from '@/core/application/usecases/auth/logout/logout.input'
 import { RefreshInput } from '@/core/application/usecases/auth/refresh/refresh.input'
 import { RegisterInput } from '@/core/application/usecases/auth/register/register.input'
-import { LoginSchema, RefreshSchema, RegisterSchema } from '../schemas/auth.schema'
+import { LoginSchema, LogoutSchema, RefreshSchema, RegisterSchema } from '../schemas/auth.schema'
 
 export const authMapper = {
   toRegisterInput(
@@ -36,6 +37,13 @@ export const authMapper = {
       refreshToken: body.refreshToken,
       ...(userAgent !== undefined && { userAgent }),
       ...(ipAddress !== undefined && { ipAddress }),
+    }
+  },
+
+  toLogoutInput(body: LogoutSchema, userId: string): LogoutInput {
+    return {
+      sessionId: body.sessionId,
+      userId,
     }
   },
 }
