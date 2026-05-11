@@ -34,8 +34,8 @@ export const authMapper = {
     ipAddress?: string | null,
   ): RefreshInput {
     return {
-      sessionId: body.sessionId,
-      refreshToken: body.refreshToken,
+      sessionId: body.session_id,
+      refreshToken: body.refresh_token,
       ...(userAgent !== undefined && { userAgent }),
       ...(ipAddress !== undefined && { ipAddress }),
     }
@@ -43,7 +43,7 @@ export const authMapper = {
 
   toLogoutInput(body: LogoutSchema, userId: string): LogoutInput {
     return {
-      sessionId: body.sessionId,
+      sessionId: body.session_id,
       userId,
     }
   },

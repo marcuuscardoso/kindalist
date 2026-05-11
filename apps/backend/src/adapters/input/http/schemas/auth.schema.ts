@@ -12,12 +12,12 @@ export const loginSchema = z.object({
 })
 
 export const refreshSchema = z.object({
-  sessionId: z.string().min(1),
-  refreshToken: z.string().min(1),
+  session_id: z.string().min(1),
+  refresh_token: z.string().min(1),
 })
 
 export const logoutSchema = z.object({
-  sessionId: z.string().min(1),
+  session_id: z.string().min(1),
 })
 
 export type RegisterSchema = z.infer<typeof registerSchema>

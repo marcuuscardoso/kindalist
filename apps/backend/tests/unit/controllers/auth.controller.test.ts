@@ -13,6 +13,8 @@ import { UnauthorizedException } from '@/core/domain/errors/unauthorized.error'
 type MockResponse = Response & {
   status: jest.Mock
   json: jest.Mock
+  cookie: jest.Mock
+  clearCookie: jest.Mock
 }
 
 const mockRegisterUseCase: jest.Mocked<RegisterUseCasePort> = {
@@ -35,6 +37,8 @@ function createResponse(): MockResponse {
   const response = {
     status: jest.fn().mockReturnThis(),
     json: jest.fn().mockReturnThis(),
+    cookie: jest.fn().mockReturnThis(),
+    clearCookie: jest.fn().mockReturnThis(),
   }
 
   return response as unknown as MockResponse
@@ -88,7 +92,7 @@ describe('AuthController', () => {
   })
 
   it('should return 400 when refresh body is invalid', async () => {
-    const req = createRequest({ body: {} })
+    const req = createRequest({ cookies: {} })
     const res = createResponse()
 
     await executeWithErrorHandler(() => controller.refresh(req, res), res)
@@ -115,7 +119,7 @@ describe('AuthController', () => {
 
   it('should return 403 when logout usecase throws UnauthorizedException', async () => {
     const req = createRequest({
-      body: { sessionId: 'session-id' },
+      cookies: { session_id: 'session-id' },
       user: { userId: 'user-id', role: 'MEMBER' },
     })
     const res = createResponse()
@@ -162,8 +166,11 @@ describe('AuthController', () => {
     expect(res.json).toHaveBeenCalledWith({
       status: 'success',
       message: 'Success',
-      data: output,
+      data: { user: output.user },
     })
+    expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('session_id', 'session-id', expect.any(Object))
   })
 
   it('should return 200 when login succeeds', async () => {
@@ -193,8 +200,11 @@ describe('AuthController', () => {
     expect(res.json).toHaveBeenCalledWith({
       status: 'success',
       message: 'Success',
-      data: output,
+      data: { user: output.user },
     })
+    expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('session_id', 'session-id', expect.any(Object))
   })
 
   it('should return 200 when refresh succeeds', async () => {
@@ -204,9 +214,9 @@ describe('AuthController', () => {
       sessionId: 'session-id',
     }
     const req = createRequest({
-      body: {
-        sessionId: 'session-id',
-        refreshToken: 'refresh-token',
+      cookies: {
+        session_id: 'session-id',
+        refresh_token: 'refresh-token',
       },
     })
     const res = createResponse()
@@ -216,12 +226,26 @@ describe('AuthController', () => {
     await controller.refresh(req, res)
 
     expect(res.status).toHaveBeenCalledWith(200)
+    expect(mockRefreshUseCase.execute).toHaveBeenCalledWith({
+      sessionId: 'session-id',
+      refreshToken: 'refresh-token',
+      userAgent: 'jest-agent',
+      ipAddress: '127.0.0.1',
+    })
+    expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('session_id', 'session-id', expect.any(Object))
+    expect(res.json).toHaveBeenCalledWith({
+      status: 'success',
+      message: 'Success',
+      data: { success: true },
+    })
   })
 
   it('should return 200 when logout succeeds', async () => {
     const output = { success: true }
     const req = createRequest({
-      body: { sessionId: 'session-id' },
+      cookies: { session_id: 'session-id' },
       user: { userId: 'user-id', role: 'MEMBER' },
     })
     const res = createResponse()
@@ -240,5 +264,8 @@ describe('AuthController', () => {
       message: 'Success',
       data: output,
     })
+    expect(res.clearCookie).toHaveBeenCalledWith('access_token', expect.any(Object))
+    expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', expect.any(Object))
+    expect(res.clearCookie).toHaveBeenCalledWith('session_id', expect.any(Object))
   })
 })

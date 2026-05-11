@@ -12,16 +12,9 @@ const authPayloadSchema = z.object({
 })
 
 export const authenticationMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const authorization = req.headers.authorization
+  const token = req.cookies?.access_token
 
-  if (!authorization) {
-    res.status(401).json(apiResponse.error('Unauthorized'))
-    return
-  }
-
-  const [type, token] = authorization.split(' ')
-
-  if (type !== 'Bearer' || !token) {
+  if (!token) {
     res.status(401).json(apiResponse.error('Unauthorized'))
     return
   }
