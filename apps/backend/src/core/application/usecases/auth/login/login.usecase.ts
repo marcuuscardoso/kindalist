@@ -3,7 +3,6 @@ import { PasswordHasherPort } from '@/core/application/ports/output/password-has
 import { SessionRepositoryPort } from '@/core/application/ports/output/session.repository.port'
 import { TokenServicePort } from '@/core/application/ports/output/token-service.port'
 import { UserRepositoryPort } from '@/core/application/ports/output/user.repository.port'
-import { NotFoundException } from '@/core/domain/errors/not-found.error'
 import { ValidationException } from '@/core/domain/errors/validation.error'
 import { LoginInput } from './login.input'
 import { LoginOutput } from './login.output'
@@ -20,7 +19,7 @@ export class LoginUseCase implements LoginUseCasePort {
 
   async execute(input: LoginInput): Promise<LoginOutput> {
     const user = await this.userRepository.findByEmail(input.email)
-    if (!user) throw new NotFoundException('User')
+    if (!user) throw new ValidationException('Invalid credentials')
 
     const isPasswordValid = await this.passwordHasher.compare(input.password, user.password)
     if (!isPasswordValid) throw new ValidationException('Invalid credentials')

@@ -3,7 +3,6 @@ import { PasswordHasherPort } from '@/core/application/ports/output/password-has
 import { SessionRepositoryPort } from '@/core/application/ports/output/session.repository.port'
 import { TokenServicePort } from '@/core/application/ports/output/token-service.port'
 import { UserRepositoryPort } from '@/core/application/ports/output/user.repository.port'
-import { NotFoundException } from '@/core/domain/errors/not-found.error'
 import { Role } from '@/core/domain/enums/user-role.enum'
 import { ValidationException } from '@/core/domain/errors/validation.error'
 
@@ -81,7 +80,7 @@ describe('LoginUseCase', () => {
     })
   })
 
-  it('should throw NotFoundException when user does not exist', async () => {
+  it('should throw ValidationException when user does not exist', async () => {
     mockUserRepository.findByEmail.mockResolvedValue(null)
 
     await expect(
@@ -89,7 +88,7 @@ describe('LoginUseCase', () => {
         email: 'missing@example.com',
         password: 'plain-password',
       }),
-    ).rejects.toBeInstanceOf(NotFoundException)
+    ).rejects.toEqual(new ValidationException('Invalid credentials'))
   })
 
   it('should throw ValidationException when password is incorrect', async () => {
@@ -109,7 +108,7 @@ describe('LoginUseCase', () => {
         email: 'john@example.com',
         password: 'wrong-password',
       }),
-    ).rejects.toBeInstanceOf(ValidationException)
+    ).rejects.toEqual(new ValidationException('Invalid credentials'))
   })
 
   it('should call passwordHasher.compare with plain password and stored hash', async () => {
