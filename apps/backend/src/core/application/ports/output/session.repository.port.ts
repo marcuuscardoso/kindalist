@@ -20,5 +20,6 @@ export interface SessionRepositoryPort {
   findById(id: string): Promise<Session | null>
   create(data: CreateSessionData): Promise<Session>
   update(id: string, data: UpdateSessionData): Promise<Session>
+  rotateRefreshToken(id: string, currentRefreshToken: string, data: UpdateSessionData): Promise<boolean>
   delete(id: string): Promise<void>
 }

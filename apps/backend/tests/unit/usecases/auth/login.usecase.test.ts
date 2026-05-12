@@ -17,6 +17,7 @@ const mockSessionRepository: jest.Mocked<SessionRepositoryPort> = {
   findById: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
+  rotateRefreshToken: jest.fn(),
   delete: jest.fn(),
 }
 

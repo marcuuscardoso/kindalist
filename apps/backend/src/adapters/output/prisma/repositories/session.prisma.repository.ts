@@ -40,6 +40,22 @@ export class SessionPrismaRepository implements SessionRepositoryPort {
     return this.toEntity(model)
   }
 
+  async rotateRefreshToken(
+    id: string,
+    currentRefreshToken: string,
+    data: UpdateSessionData,
+  ): Promise<boolean> {
+    const result = await this.prisma.session.updateMany({
+      where: {
+        id,
+        refreshToken: currentRefreshToken,
+      },
+      data,
+    })
+
+    return result.count === 1
+  }
+
   async delete(id: string): Promise<void> {
     await this.prisma.session.deleteMany({ where: { id } })
   }

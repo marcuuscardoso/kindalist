@@ -11,6 +11,7 @@ const mockSessionRepository: jest.Mocked<SessionRepositoryPort> = {
   findById: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
+  rotateRefreshToken: jest.fn(),
   delete: jest.fn(),
 }
 
@@ -37,6 +38,7 @@ describe('RefreshUseCase', () => {
     jest.clearAllMocks()
     mockPasswordHasher.compare.mockResolvedValue(true)
     mockPasswordHasher.hash.mockResolvedValue('new-hashed-refresh-token')
+    mockSessionRepository.rotateRefreshToken.mockResolvedValue(true)
     mockTokenService.generateAccessToken.mockReturnValue('new-access-token')
     mockTokenService.generateRefreshToken.mockReturnValue('new-raw-refresh-token')
     mockUserRepository.findById.mockResolvedValue({
@@ -157,8 +159,9 @@ describe('RefreshUseCase', () => {
       'raw-refresh-token',
       'stored-hashed-refresh-token',
     )
-    expect(mockSessionRepository.update).toHaveBeenCalledWith(
+    expect(mockSessionRepository.rotateRefreshToken).toHaveBeenCalledWith(
       'session-id',
+      'stored-hashed-refresh-token',
       expect.objectContaining({
         refreshToken: 'new-hashed-refresh-token',
         userAgent: 'jest-agent',
@@ -167,5 +170,28 @@ describe('RefreshUseCase', () => {
         expiresAt: expect.any(Date),
       }),
     )
+  })
+
+  it('should throw UnauthorizedException when refresh token was already rotated', async () => {
+    mockSessionRepository.findById.mockResolvedValue({
+      id: 'session-id',
+      userId: 'user-id',
+      refreshToken: 'stored-hashed-refresh-token',
+      userAgent: null,
+      ipAddress: null,
+      lastUsedAt: new Date('2026-01-01T00:00:00.000Z'),
+      expiresAt: new Date(Date.now() + 60_000),
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+    mockSessionRepository.rotateRefreshToken.mockResolvedValue(false)
+
+    await expect(
+      usecase.execute({
+        sessionId: 'session-id',
+        refreshToken: 'raw-refresh-token',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException)
+
+    expect(mockTokenService.generateAccessToken).not.toHaveBeenCalled()
   })
 })

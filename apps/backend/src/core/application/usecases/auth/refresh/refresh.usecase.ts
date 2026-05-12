@@ -36,13 +36,18 @@ export class RefreshUseCase implements RefreshUseCasePort {
     const rawRefreshToken = this.tokenService.generateRefreshToken()
     const hashedRefreshToken = await this.passwordHasher.hash(rawRefreshToken)
 
-    await this.sessionRepository.update(input.sessionId, {
-      refreshToken: hashedRefreshToken,
-      userAgent: input.userAgent ?? null,
-      ipAddress: input.ipAddress ?? null,
-      lastUsedAt: new Date(),
-      expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRATION_IN_MS),
-    })
+    const isRefreshTokenRotated = await this.sessionRepository.rotateRefreshToken(
+      input.sessionId,
+      session.refreshToken,
+      {
+        refreshToken: hashedRefreshToken,
+        userAgent: input.userAgent ?? null,
+        ipAddress: input.ipAddress ?? null,
+        lastUsedAt: new Date(),
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRATION_IN_MS),
+      },
+    )
+    if (!isRefreshTokenRotated) throw new UnauthorizedException()
 
     const accessToken = this.tokenService.generateAccessToken({
       userId: user.id,
