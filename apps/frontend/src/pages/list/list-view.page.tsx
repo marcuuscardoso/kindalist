@@ -1,16 +1,19 @@
 import {
   Archive,
+  CalendarDays,
   Check,
   ChevronDown,
+  GripVertical,
   LayoutList,
   MoreHorizontal,
   Plus,
   Search,
   Columns3,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { DragEvent, useEffect, useMemo, useState } from 'react'
 import { Navigate, useOutletContext, useParams } from 'react-router-dom'
 import { routes } from '@/app/routes'
+import { taskService } from '@/services/task.service'
 import { AppLayoutContext } from '@/types/dashboard'
 import { Task, TaskPriority, TaskStatus } from '@/types/task'
 
@@ -18,8 +21,11 @@ type TaskSection = {
   status: TaskStatus
   title: string
   color: string
+  boardTitle: string
   tasks: Task[]
 }
+
+type ViewMode = 'list' | 'board'
 
 const priorityStyles: Record<TaskPriority, { label: string; className: string }> = {
   [TaskPriority.LOW]: {
@@ -39,24 +45,35 @@ const priorityStyles: Record<TaskPriority, { label: string; className: string }>
 const sectionMeta = {
   [TaskStatus.TODO]: {
     title: 'A fazer',
+    boardTitle: 'TODO',
     color: 'hsl(240 4% 60%)',
   },
   [TaskStatus.IN_PROGRESS]: {
     title: 'Em progresso',
+    boardTitle: 'IN PROGRESS',
     color: 'hsl(38 92% 50%)',
   },
   [TaskStatus.DONE]: {
     title: 'Concluídas',
+    boardTitle: 'DONE',
     color: 'hsl(142 55% 42%)',
   },
-} satisfies Record<TaskStatus, { title: string; color: string }>
+} satisfies Record<TaskStatus, { title: string; boardTitle: string; color: string }>
 
 export function ListViewPage() {
   const { listId } = useParams()
   const { lists, tasksByListId, isLoading, error } = useOutletContext<AppLayoutContext>()
   const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState<ViewMode>('board')
+  const [localTasks, setLocalTasks] = useState<Task[]>([])
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
+  const [dropTargetStatus, setDropTargetStatus] = useState<TaskStatus | null>(null)
   const list = lists.find((currentList) => currentList.id === listId)
-  const tasks = listId ? tasksByListId[listId] ?? [] : []
+  const tasks = localTasks
+
+  useEffect(() => {
+    setLocalTasks(listId ? tasksByListId[listId] ?? [] : [])
+  }, [listId, tasksByListId])
 
   const visibleTasks = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -82,6 +99,19 @@ export function ListViewPage() {
 
   const doneCount = tasks.filter((task) => task.status === TaskStatus.DONE).length
 
+  function moveTask(taskId: string, status: TaskStatus) {
+    if (!listId) return
+
+    const previousTasks = localTasks
+    setLocalTasks((currentTasks) =>
+      currentTasks.map((task) => (task.id === taskId ? { ...task, status } : task)),
+    )
+
+    void taskService.update(listId, taskId, { status }).catch(() => {
+      setLocalTasks(previousTasks)
+    })
+  }
+
   if (!isLoading && !list) return <Navigate to={routes.app} replace />
 
   return (
@@ -102,24 +132,65 @@ export function ListViewPage() {
 
             <div className="mb-4 flex items-center gap-[10px]">
               <div className="inline-flex gap-0.5 rounded-[6px] bg-[hsl(var(--muted))] p-[3px]">
-                <button className="inline-flex h-[26px] items-center justify-center gap-[6px] rounded-[5px] bg-[hsl(var(--bg))] px-[11px] text-[12.5px] font-medium text-[hsl(var(--fg))] shadow-[0_1px_2px_hsl(0_0%_0%/0.06)]">
+                <button
+                  className={`inline-flex h-[26px] items-center justify-center gap-[6px] rounded-[5px] px-[11px] text-[12.5px] font-medium ${
+                    viewMode === 'list'
+                      ? 'bg-[hsl(var(--bg))] text-[hsl(var(--fg))] shadow-[0_1px_2px_hsl(0_0%_0%/0.06)]'
+                      : 'text-[hsl(var(--muted-fg))]'
+                  }`}
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                >
                   <LayoutList size={13} strokeWidth={1.6} />
                   Lista
                 </button>
-                <button className="inline-flex h-[26px] items-center justify-center gap-[6px] rounded-[5px] px-[11px] text-[12.5px] font-medium text-[hsl(var(--muted-fg))]">
+                <button
+                  className={`inline-flex h-[26px] items-center justify-center gap-[6px] rounded-[5px] px-[11px] text-[12.5px] font-medium ${
+                    viewMode === 'board'
+                      ? 'bg-[hsl(var(--bg))] text-[hsl(var(--fg))] shadow-[0_1px_2px_hsl(0_0%_0%/0.06)]'
+                      : 'text-[hsl(var(--muted-fg))]'
+                  }`}
+                  type="button"
+                  onClick={() => setViewMode('board')}
+                >
                   <Columns3 size={13} strokeWidth={1.6} />
                   Board
                 </button>
               </div>
 
               <div className="ml-auto font-mono text-[12px] leading-[1.4] text-[hsl(var(--muted-fg))]">
-                {tasks.length} tasks · {doneCount} concluídas
+                {viewMode === 'board' ? 'arraste cards entre colunas' : `${tasks.length} tasks · ${doneCount} concluídas`}
               </div>
             </div>
 
-            {sections.map((section) => (
-              <TaskSectionCard key={section.status} section={section} />
-            ))}
+            {viewMode === 'list' &&
+              sections.map((section) => <TaskSectionCard key={section.status} section={section} />)}
+
+            {viewMode === 'board' && (
+              <div className="grid h-full grid-cols-3 content-start gap-[14px]">
+                {sections.map((section) => (
+                  <BoardColumn
+                    key={section.status}
+                    section={section}
+                    draggingTaskId={draggingTaskId}
+                    isDropTarget={dropTargetStatus === section.status}
+                    onDragStart={setDraggingTaskId}
+                    onDragEnd={() => {
+                      setDraggingTaskId(null)
+                      setDropTargetStatus(null)
+                    }}
+                    onDragOver={setDropTargetStatus}
+                    onDrop={(status) => {
+                      if (!draggingTaskId) return
+
+                      moveTask(draggingTaskId, status)
+                      setDraggingTaskId(null)
+                      setDropTargetStatus(null)
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </section>
@@ -205,6 +276,121 @@ function TaskSectionCard({ section }: { section: TaskSection }) {
   )
 }
 
+type BoardColumnProps = {
+  section: TaskSection
+  draggingTaskId: string | null
+  isDropTarget: boolean
+  onDragStart(taskId: string): void
+  onDragEnd(): void
+  onDragOver(status: TaskStatus | null): void
+  onDrop(status: TaskStatus): void
+}
+
+function BoardColumn({
+  section,
+  draggingTaskId,
+  isDropTarget,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+}: BoardColumnProps) {
+  function handleDragOver(event: DragEvent<HTMLElement>) {
+    event.preventDefault()
+    onDragOver(section.status)
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return
+    onDragOver(null)
+  }
+
+  return (
+    <section
+      className={`flex min-h-[200px] flex-col gap-[10px] rounded-[8px] border p-3 transition-colors duration-150 ${
+        isDropTarget
+          ? 'border-dashed border-[hsl(var(--fg)/0.35)] bg-[hsl(var(--fg)/0.04)]'
+          : 'border-[hsl(var(--border))] bg-[hsl(var(--subtle))]'
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={(event) => {
+        event.preventDefault()
+        onDrop(section.status)
+      }}
+    >
+      <div className="flex items-center gap-2 px-0.5">
+        <span className="size-2 rounded-full" style={{ backgroundColor: section.color }} />
+        <h4 className="text-[12px] font-semibold uppercase leading-[1.4] tracking-[0.06em]">
+          {section.boardTitle}
+        </h4>
+        <span className="rounded-full bg-[hsl(var(--muted))] px-[7px] py-px font-mono text-[11px] leading-[1.4] text-[hsl(var(--muted-fg))]">
+          {section.tasks.length}
+        </span>
+        <button className="ml-auto text-[hsl(var(--muted-fg))] transition-colors duration-150 hover:text-[hsl(var(--fg))]">
+          <Plus size={14} strokeWidth={1.6} />
+        </button>
+      </div>
+
+      {section.tasks.length === 0 && (
+        <div className="rounded-[6px] border border-dashed border-[hsl(var(--border-strong))] px-3 py-[18px] text-center text-[12px] leading-[1.4] text-[hsl(var(--muted-fg))]">
+          Solte tasks aqui
+        </div>
+      )}
+
+      {section.tasks.map((task) => (
+        <TaskCard
+          key={task.id}
+          task={task}
+          isDragging={draggingTaskId === task.id}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+        />
+      ))}
+    </section>
+  )
+}
+
+type TaskCardProps = {
+  task: Task
+  isDragging: boolean
+  onDragStart(taskId: string): void
+  onDragEnd(): void
+}
+
+function TaskCard({ task, isDragging, onDragStart, onDragEnd }: TaskCardProps) {
+  return (
+    <article
+      className={`flex cursor-grab flex-col gap-2 rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-[11px] transition-[border-color,box-shadow,transform,opacity] duration-150 hover:border-[hsl(var(--border-strong))] ${
+        isDragging ? 'cursor-grabbing opacity-50' : ''
+      }`}
+      draggable
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = 'move'
+        event.dataTransfer.setData('text/plain', task.id)
+        onDragStart(task.id)
+      }}
+      onDragEnd={onDragEnd}
+    >
+      <div className="flex items-start gap-[6px]">
+        <h5 className="min-w-0 flex-1 text-[13px] font-medium leading-[1.35]">{task.title}</h5>
+        <GripVertical size={12} strokeWidth={1.6} className="shrink-0 text-[hsl(var(--muted-fg))] opacity-60" />
+      </div>
+      <p className="line-clamp-2 text-[12px] leading-[1.4] text-[hsl(var(--muted-fg))]">
+        {task.description ?? 'Sem descrição.'}
+      </p>
+      <div className="mt-0.5 flex items-center gap-2">
+        <PriorityBadge priority={task.priority} />
+        <span className="flex-1" />
+        <span className="inline-flex items-center gap-1 text-[11.5px] leading-[1.4] text-[hsl(var(--muted-fg))] tabular-nums">
+          <CalendarDays size={12} strokeWidth={1.6} />
+          {formatShortDate(task.deadline)}
+        </span>
+      </div>
+    </article>
+  )
+}
+
 function TableHead({ children, className = '' }: { children?: string; className?: string }) {
   return (
     <th
@@ -287,6 +473,17 @@ function formatDate(value: string | null): string {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+  })
+    .format(new Date(value))
+    .replace('.', '')
+}
+
+function formatShortDate(value: string | null): string {
+  if (!value) return 'Sem prazo'
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
   })
     .format(new Date(value))
     .replace('.', '')
