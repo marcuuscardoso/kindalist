@@ -1,6 +1,7 @@
 import { MoreHorizontal, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
+import { routes } from '@/app/routes'
 import { AppLayoutContext, DashboardListSummary } from '@/types/dashboard'
 
 export function DashboardPage() {
@@ -94,7 +95,10 @@ function ListCard({ list }: { list: DashboardListSummary }) {
   const percent = list.total > 0 ? Math.round((list.done / list.total) * 100) : 0
 
   return (
-    <button className="flex min-h-[132px] flex-col gap-[10px] rounded-[8px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 text-left transition-[border-color,transform] duration-150 hover:border-[hsl(var(--border-strong))]">
+    <Link
+      className="flex min-h-[132px] flex-col gap-[10px] rounded-[8px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 text-left transition-[border-color,transform] duration-150 hover:border-[hsl(var(--border-strong))]"
+      to={routes.list(list.id)}
+    >
       <div className="flex items-start gap-[10px]">
         <div
           className="flex size-8 shrink-0 items-center justify-center rounded-[7px] text-[14px] font-semibold text-white"
@@ -125,7 +129,7 @@ function ListCard({ list }: { list: DashboardListSummary }) {
         </span>
         <span>{percent}%</span>
       </div>
-    </button>
+    </Link>
   )
 }
 

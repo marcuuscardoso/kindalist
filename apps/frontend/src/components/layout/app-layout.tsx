@@ -29,6 +29,7 @@ export function AppLayout() {
   const { user } = useAuth()
   const [context, setContext] = useState<AppLayoutContext>({
     lists: [],
+    tasksByListId: {},
     archivedCount: 0,
     isLoading: true,
     error: null,
@@ -54,6 +55,7 @@ export function AppLayout() {
 
         setContext({
           lists: listsWithTasks.map(({ list, tasks, index }) => toListSummary(list, tasks, index)),
+          tasksByListId: Object.fromEntries(listsWithTasks.map(({ list, tasks }) => [list.id, tasks])),
           archivedCount: archivedLists.length,
           isLoading: false,
           error: null,

@@ -1,3 +1,5 @@
+import { Task } from './task'
+
 export type DashboardListSummary = {
   id: string
   title: string
@@ -10,6 +12,7 @@ export type DashboardListSummary = {
 
 export type AppLayoutContext = {
   lists: DashboardListSummary[]
+  tasksByListId: Record<string, Task[]>
   archivedCount: number
   isLoading: boolean
   error: string | null

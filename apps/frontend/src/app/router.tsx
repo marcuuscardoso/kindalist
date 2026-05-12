@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { LoginPage } from '@/pages/auth/login.page'
 import { RegisterPage } from '@/pages/auth/register.page'
 import { DashboardPage } from '@/pages/dashboard/dashboard.page'
+import { ListViewPage } from '@/pages/list/list-view.page'
 import { AuthGuard, GuestGuard } from './auth-guard'
 import { routes } from './routes'
 
@@ -40,7 +41,7 @@ export const router = createBrowserRouter([
           },
           {
             path: '/app/lists/:listId',
-            element: <DashboardPage />,
+            element: <ListViewPage />,
           },
         ],
       },

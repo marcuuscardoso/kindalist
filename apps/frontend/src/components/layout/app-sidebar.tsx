@@ -1,5 +1,7 @@
 import { Archive, ChevronDown, Home, Settings } from 'lucide-react'
 import { ReactNode } from 'react'
+import { Link, useLocation, useParams } from 'react-router-dom'
+import { routes } from '@/app/routes'
 import { AuthUser } from '@/types/auth'
 import { DashboardListSummary } from '@/types/dashboard'
 
@@ -10,6 +12,10 @@ type AppSidebarProps = {
 }
 
 export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
+  const { listId } = useParams()
+  const location = useLocation()
+  const isHomeActive = location.pathname === routes.app || location.pathname === routes.list()
+
   return (
     <aside className="flex h-full w-[248px] shrink-0 flex-col gap-[6px] border-r border-[hsl(var(--border))] bg-[hsl(var(--subtle))] px-3 pb-3 pt-4">
       <div className="mb-[10px] flex items-center gap-[9px] border-b border-[hsl(var(--border))] px-2 pb-[14px] pt-1">
@@ -25,7 +31,7 @@ export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
       </div>
 
       <nav className="flex flex-col gap-[6px]">
-        <SideItem active icon={<Home size={15} strokeWidth={1.6} />} label="Home" />
+        <SideItem active={isHomeActive} to={routes.app} icon={<Home size={15} strokeWidth={1.6} />} label="Home" />
       </nav>
 
       <div className="px-2 pb-[6px] pt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[hsl(var(--muted-fg))]">
@@ -33,7 +39,15 @@ export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
       </div>
       <nav className="flex flex-col gap-[6px]">
         {lists.map((list) => (
-          <SideItem key={list.id} muted dotColor={list.color} label={list.title} count={String(list.total)} />
+          <SideItem
+            key={list.id}
+            active={list.id === listId}
+            muted={list.id !== listId}
+            to={routes.list(list.id)}
+            dotColor={list.color}
+            label={list.title}
+            count={String(list.total)}
+          />
         ))}
       </nav>
 
@@ -61,6 +75,7 @@ export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
 
 type SideItemProps = {
   label: string
+  to?: string
   icon?: ReactNode
   dotColor?: string
   count?: string
@@ -68,17 +83,16 @@ type SideItemProps = {
   muted?: boolean
 }
 
-function SideItem({ label, icon, dotColor, count, active = false, muted = false }: SideItemProps) {
-  return (
-    <button
-      className={`flex min-h-[30px] items-center gap-[9px] rounded-[6px] px-[9px] py-[7px] text-left text-[13.5px] leading-[1.2] transition-colors duration-150 hover:bg-[hsl(var(--accent))] ${
+function SideItem({ label, to, icon, dotColor, count, active = false, muted = false }: SideItemProps) {
+  const className = `flex min-h-[30px] items-center gap-[9px] rounded-[6px] px-[9px] py-[7px] text-left text-[13.5px] leading-[1.2] transition-colors duration-150 hover:bg-[hsl(var(--accent))] ${
         active
           ? 'bg-[hsl(var(--fg)/0.06)] font-medium text-[hsl(var(--fg))]'
           : muted
             ? 'font-normal text-[hsl(var(--muted-fg))]'
             : 'font-[450] text-[hsl(var(--fg))]'
-      }`}
-    >
+      }`
+  const content = (
+    <>
       {icon}
       {dotColor && <span className="size-2 rounded-full" style={{ backgroundColor: dotColor }} />}
       <span className="truncate">{label}</span>
@@ -87,6 +101,20 @@ function SideItem({ label, icon, dotColor, count, active = false, muted = false 
           {count}
         </span>
       )}
+    </>
+  )
+
+  if (to) {
+    return (
+      <Link className={className} to={to}>
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <button className={className} type="button">
+      {content}
     </button>
   )
 }
