@@ -11,13 +11,11 @@ O projeto permite registro e autenticação de usuários, criação e organizaç
 - [Instalação e Inicialização](#instalação-e-inicialização)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Arquitetura](#arquitetura)
-- [Documentação da API](#documentação-da-api)
-  - [Autenticação](#autenticação)
-  - [Listas](#listas)
-  - [Tasks](#tasks)
+- [Metodologia de Testes](#metodologia-de-testes)
 - [Frontend](#frontend)
 - [Considerações sobre o Projeto](#considerações-sobre-o-projeto)
 - [Comandos Úteis](#comandos-úteis)
+- [Documentação da API](#documentação-da-api)
 
 ## Descrição
 
@@ -176,6 +174,148 @@ As regras de negócio ficam no `core`, sem depender de Express, Prisma, Zod, JWT
 
 Esse desenho permite que os usecases sejam testados com mocks, sem subir servidor, banco de dados ou serviços externos.
 
+## Metodologia de Testes
+
+O projeto foi desenvolvido com TDD como disciplina central. Os testes foram escritos antes da implementação, guiando o design das interfaces (ports) e o comportamento esperado de cada camada. A suíte possui **23 suites** e **115 testes**, todos passando sem dependências externas (banco ou servidor real).
+
+Para executar:
+
+```bash
+cd apps/backend
+
+npm test
+npm run test:watch
+npm run test:coverage
+```
+
+### Testes unitários de UseCases
+
+Os UseCases contêm a regra de negócio pura da aplicação e foram o ponto de partida do TDD. Cada dependência (repositórios, serviços de token, hasher) é uma interface (Port), o que torna possível substituí-la por um `jest.Mocked<Port>` sem qualquer configuração adicional.
+
+Essa abordagem tem duas vantagens concretas: os testes rodam em memória, sem I/O, e validam exatamente a regra de negócio. Casos como "usuário não encontrado", "dono incorreto" e "limite de 1000 registros no bulk create" são verificados de forma determinística e isolada.
+
+### Testes unitários de Controllers e Middlewares
+
+Os Controllers são testados de forma similar: os UseCases são mockados e o teste verifica que a entrada HTTP (body, cookies, params) é corretamente mapeada para o input do UseCase, e que erros de domínio (`NotFoundException`, `ConflictException`, etc.) chegam ao cliente com o status HTTP correto.
+
+O `authenticationMiddleware` segue o mesmo padrão: é uma função pura que recebe `req`, `res` e `next` — testável com objetos fake simples, sem nenhuma camada extra.
+
+### Testes de integração
+
+Três comportamentos não podem ser verificados adequadamente com objetos fake:
+
+**Pipeline PUBLIC/OPEN/PRIVATE (`define-router`):** a composição de middlewares no Express (encadeamento via `next()`, propagação de erros para o `errorHandler`, cookies sendo lidos pelo `cookie-parser`) só se manifesta corretamente em um servidor HTTP de verdade. Um mock de `req/res` não executa o pipeline — ele simula um ponto específico dele.
+
+**Rate limiting:** o `express-rate-limit` conta requisições por IP usando estado interno atrelado à instância do middleware. Testar se o 429 é retornado na 21ª requisição exige que 21 requisições HTTP reais sejam disparadas contra um servidor ativo.
+
+**CORS:** a negociação de CORS depende de headers reais de resposta (`Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials`) gerados pelo middleware `cors` em resposta a um `Origin` específico na requisição. Isso não é verificável inspecionando um objeto de resposta mockado.
+
+Para esses casos, cada teste cria um servidor Express em uma porta aleatória (`app.listen(0)`) via um helper `withServer`, executa as requisições com `fetch` e fecha o servidor ao final — sem estado compartilhado entre testes.
+
+## Frontend
+
+O frontend foi desenvolvido com React, TypeScript, React Router, Tailwind e uma camada de services para comunicação com a API.
+
+Principais telas:
+
+- Login
+- Registro
+- Dashboard com listas
+- Visualização de lista em modo lista
+- Visualização de lista em modo board
+- Listas arquivadas
+- Side panels para criação e edição de listas e tasks
+
+O frontend utiliza cookies HttpOnly para autenticação. Por isso, as requisições são feitas com `credentials: 'include'`, e o CORS do backend é configurado através de `FRONTEND_URL`.
+
+## Considerações sobre o Projeto
+
+Este projeto foi desenvolvido exclusivamente como parte de um teste técnico e serve como demonstração de conceitos de arquitetura, organização de código e desenvolvimento fullstack.
+
+Em um cenário de produção real, algumas melhorias seriam necessárias:
+
+### Segurança
+
+- Configurar secrets reais e rotacionáveis
+- Adicionar proteção CSRF, já que a autenticação utiliza cookies
+- Configurar política de CORS por ambiente
+- Melhorar auditoria de sessões e revogação de dispositivos
+
+### Banco de Dados
+
+- Adicionar índices compostos conforme o crescimento das queries
+- Implementar paginação para listas e tasks
+- Avaliar full-text search para busca textual
+- Criar estratégia de backup e restore
+
+### Frontend
+
+- Melhorar estados de loading e erro por operação
+- Adicionar feedback visual para ações destrutivas
+- Melhorar responsividade mobile
+- Adicionar testes de componentes e fluxos críticos
+
+### Observabilidade
+
+- Adicionar logging estruturado
+- Adicionar tracing e métricas
+- Criar health check
+- Integrar monitoramento com ferramentas como Grafana, Prometheus ou ELK
+
+## Comandos Úteis
+
+### Raiz do projeto
+
+```bash
+npm install
+npm run dev:backend
+npm run dev:frontend
+npm test
+docker compose up -d
+docker compose down
+```
+
+### Backend
+
+```bash
+npm run dev --workspace=apps/backend
+npm run build --workspace=apps/backend
+npm run start --workspace=apps/backend
+npm run test --workspace=apps/backend
+npm run test:watch --workspace=apps/backend
+npm run test:coverage --workspace=apps/backend
+```
+
+### Frontend
+
+```bash
+npm run dev --workspace=apps/frontend
+npm run build --workspace=apps/frontend
+npm run preview --workspace=apps/frontend
+```
+
+### Prisma
+
+Execute os comandos dentro de `apps/backend`:
+
+```bash
+cd apps/backend
+npx prisma generate
+npx prisma migrate dev
+npx prisma migrate reset
+npx prisma studio
+```
+
+### Banco de Dados
+
+```bash
+docker compose up -d
+docker compose down
+docker compose down -v
+```
+
+`docker compose down -v` remove também o volume do MySQL, apagando os dados locais.
+
 ## Documentação da API
 
 **Base URL:** `http://localhost:3000`
@@ -249,7 +389,7 @@ Encerra a sessão atual e remove os cookies de autenticação.
 
 Renova o access token usando o refresh token e session id enviados via cookie.
 
-**Observação:** o refresh token é opaco, não é JWT, e fica salvo hasheado no banco.
+**Observação:** o refresh token é opaco, não é JWT, e fica salvo hasheado no banco. A rotação é atômica — o token antigo é invalidado na mesma operação que gera o novo.
 
 ---
 
@@ -424,107 +564,3 @@ Atualiza uma task.
 **DELETE** `/lists/:listId/tasks/:taskId`
 
 Remove uma task.
-
-## Frontend
-
-O frontend foi desenvolvido com React, TypeScript, React Router, Tailwind e uma camada de services para comunicação com a API.
-
-Principais telas:
-
-- Login
-- Registro
-- Dashboard com listas
-- Visualização de lista em modo lista
-- Visualização de lista em modo board
-- Listas arquivadas
-- Side panels para criação e edição de listas e tasks
-
-O frontend utiliza cookies HttpOnly para autenticação. Por isso, as requisições são feitas com `credentials: 'include'`, e o CORS do backend é configurado através de `FRONTEND_URL`.
-
-## Considerações sobre o Projeto
-
-Este projeto foi desenvolvido exclusivamente como parte de um teste técnico e serve como demonstração de conceitos de arquitetura, organização de código e desenvolvimento fullstack.
-
-Em um cenário de produção real, algumas melhorias seriam necessárias:
-
-### Segurança
-
-- Configurar secrets reais e rotacionáveis
-- Adicionar proteção CSRF, já que a autenticação utiliza cookies
-- Configurar política de CORS por ambiente
-- Melhorar auditoria de sessões e revogação de dispositivos
-
-### Banco de Dados
-
-- Adicionar índices compostos conforme o crescimento das queries
-- Implementar paginação para listas e tasks
-- Avaliar full-text search para busca textual
-- Criar estratégia de backup e restore
-
-### Frontend
-
-- Melhorar estados de loading e erro por operação
-- Adicionar feedback visual para ações destrutivas
-- Melhorar responsividade mobile
-- Adicionar testes de componentes e fluxos críticos
-
-### Observabilidade
-
-- Adicionar logging estruturado
-- Adicionar tracing e métricas
-- Criar health check
-- Integrar monitoramento com ferramentas como Grafana, Prometheus ou ELK
-
-## Comandos Úteis
-
-### Raiz do projeto
-
-```bash
-npm install
-npm run dev:backend
-npm run dev:frontend
-npm test
-docker compose up -d
-docker compose down
-```
-
-### Backend
-
-```bash
-npm run dev --workspace=apps/backend
-npm run build --workspace=apps/backend
-npm run start --workspace=apps/backend
-npm run test --workspace=apps/backend
-npm run test:watch --workspace=apps/backend
-npm run test:coverage --workspace=apps/backend
-```
-
-### Frontend
-
-```bash
-npm run dev --workspace=apps/frontend
-npm run build --workspace=apps/frontend
-npm run preview --workspace=apps/frontend
-```
-
-### Prisma
-
-Execute os comandos dentro de `apps/backend`:
-
-```bash
-cd apps/backend
-npx prisma generate
-npx prisma migrate dev
-npx prisma migrate reset
-npx prisma studio
-```
-
-### Banco de Dados
-
-```bash
-docker compose up -d
-docker compose down
-docker compose down -v
-```
-
-`docker compose down -v` remove também o volume do MySQL, apagando os dados locais.
