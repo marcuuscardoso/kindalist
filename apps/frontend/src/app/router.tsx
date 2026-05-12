@@ -1,4 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { LoginPage } from '@/pages/auth/login.page'
+import { RegisterPage } from '@/pages/auth/register.page'
 import { AuthGuard, GuestGuard } from './auth-guard'
 import { routes } from './routes'
 
@@ -14,11 +16,11 @@ export const router = createBrowserRouter([
     children: [
       {
         path: routes.login,
-        element: <EmptyRoute />,
+        element: <LoginPage />,
       },
       {
         path: routes.register,
-        element: <EmptyRoute />,
+        element: <RegisterPage />,
       },
     ],
   },

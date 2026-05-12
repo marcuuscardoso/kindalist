@@ -7,6 +7,10 @@ import {
   RegisterRequest,
 } from '@/types/auth'
 
+type MeOptions = {
+  allowRefresh?: boolean
+}
+
 export const authService = {
   register(data: RegisterRequest): Promise<AuthUserResponse> {
     return apiRequest<AuthUserResponse>('/auth/register', {
@@ -38,9 +42,10 @@ export const authService = {
     })
   },
 
-  me(): Promise<MeResponse> {
+  me(options: MeOptions = {}): Promise<MeResponse> {
     return apiRequest<MeResponse>('/auth/me', {
       method: 'GET',
+      skipAuthRefresh: !options.allowRefresh,
     })
   },
 }

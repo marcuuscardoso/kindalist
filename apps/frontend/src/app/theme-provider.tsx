@@ -10,13 +10,13 @@ type ThemeContextValue = {
 
 export const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-const THEME_STORAGE_KEY = 'kindalist.theme'
+const THEME_STORAGE_KEY = 'kindalist.theme.preference'
 
 function getInitialTheme(): Theme {
   const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
   if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return 'light'
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

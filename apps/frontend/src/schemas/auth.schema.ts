@@ -16,6 +16,9 @@ export const registerSchema = z.object({
   name: z.string().min(1),
   email: z.string().min(1).email(),
   password: passwordSchema,
+  termsAccepted: z.boolean().refine((accepted) => accepted, {
+    message: 'Você precisa aceitar os termos.',
+  }),
 })
 
 export type LoginFormData = z.infer<typeof loginSchema>
