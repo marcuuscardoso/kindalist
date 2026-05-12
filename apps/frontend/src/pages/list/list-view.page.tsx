@@ -13,6 +13,8 @@ import {
 import { DragEvent, useEffect, useMemo, useState } from 'react'
 import { Navigate, useOutletContext, useParams } from 'react-router-dom'
 import { routes } from '@/app/routes'
+import { CreateTaskDrawer } from '@/components/drawers/create-task-drawer'
+import { EditTaskDrawer } from '@/components/drawers/edit-task-drawer'
 import { taskService } from '@/services/task.service'
 import { AppLayoutContext } from '@/types/dashboard'
 import { Task, TaskPriority, TaskStatus } from '@/types/task'
@@ -62,10 +64,12 @@ const sectionMeta = {
 
 export function ListViewPage() {
   const { listId } = useParams()
-  const { lists, tasksByListId, isLoading, error } = useOutletContext<AppLayoutContext>()
+  const { lists, tasksByListId, isLoading, error, reloadLayoutData } = useOutletContext<AppLayoutContext>()
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('board')
   const [localTasks, setLocalTasks] = useState<Task[]>([])
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [createTaskStatus, setCreateTaskStatus] = useState<TaskStatus | null>(null)
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
   const [dropTargetStatus, setDropTargetStatus] = useState<TaskStatus | null>(null)
   const list = lists.find((currentList) => currentList.id === listId)
@@ -107,16 +111,34 @@ export function ListViewPage() {
       currentTasks.map((task) => (task.id === taskId ? { ...task, status } : task)),
     )
 
-    void taskService.update(listId, taskId, { status }).catch(() => {
-      setLocalTasks(previousTasks)
-    })
+    void taskService
+      .update(listId, taskId, { status })
+      .then(() => reloadLayoutData())
+      .catch(() => {
+        setLocalTasks(previousTasks)
+      })
+  }
+
+  function updateLocalTask(updatedTask: Task) {
+    setLocalTasks((currentTasks) => currentTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)))
+    void reloadLayoutData()
+  }
+
+  function createLocalTask(task: Task) {
+    setLocalTasks((currentTasks) => [...currentTasks, task])
+    void reloadLayoutData()
+  }
+
+  function deleteLocalTask(taskId: string) {
+    setLocalTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId))
+    void reloadLayoutData()
   }
 
   if (!isLoading && !list) return <Navigate to={routes.app} replace />
 
   return (
     <>
-      <Topbar search={search} onSearchChange={setSearch} />
+      <Topbar search={search} onSearchChange={setSearch} onCreateTask={() => setCreateTaskStatus(TaskStatus.TODO)} />
       <section className="flex-1 overflow-auto px-7 pb-8 pt-6">
         {isLoading && <ListMessage>Carregando lista...</ListMessage>}
         {error && <ListMessage>{error}</ListMessage>}
@@ -164,7 +186,14 @@ export function ListViewPage() {
             </div>
 
             {viewMode === 'list' &&
-              sections.map((section) => <TaskSectionCard key={section.status} section={section} />)}
+              sections.map((section) => (
+                <TaskSectionCard
+                  key={section.status}
+                  section={section}
+                  onCreateTask={setCreateTaskStatus}
+                  onEditTask={setSelectedTask}
+                />
+              ))}
 
             {viewMode === 'board' && (
               <div className="grid h-full grid-cols-3 content-start gap-[14px]">
@@ -175,6 +204,8 @@ export function ListViewPage() {
                     draggingTaskId={draggingTaskId}
                     isDropTarget={dropTargetStatus === section.status}
                     onDragStart={setDraggingTaskId}
+                    onCreateTask={setCreateTaskStatus}
+                    onEditTask={setSelectedTask}
                     onDragEnd={() => {
                       setDraggingTaskId(null)
                       setDropTargetStatus(null)
@@ -194,6 +225,23 @@ export function ListViewPage() {
           </>
         )}
       </section>
+      {selectedTask && list && (
+        <EditTaskDrawer
+          list={list}
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onSaved={updateLocalTask}
+          onDeleted={deleteLocalTask}
+        />
+      )}
+      {createTaskStatus && list && (
+        <CreateTaskDrawer
+          list={list}
+          initialStatus={createTaskStatus}
+          onClose={() => setCreateTaskStatus(null)}
+          onCreated={createLocalTask}
+        />
+      )}
     </>
   )
 }
@@ -201,9 +249,10 @@ export function ListViewPage() {
 type TopbarProps = {
   search: string
   onSearchChange(search: string): void
+  onCreateTask(): void
 }
 
-function Topbar({ search, onSearchChange }: TopbarProps) {
+function Topbar({ search, onSearchChange, onCreateTask }: TopbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-6">
       <label className="flex h-[30px] w-full max-w-[360px] items-center gap-2 rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-[11px] text-[13px] text-[hsl(var(--muted-fg))]">
@@ -224,7 +273,11 @@ function Topbar({ search, onSearchChange }: TopbarProps) {
           <Archive size={14} strokeWidth={1.6} />
           Arquivar
         </button>
-        <button className="inline-flex h-8 items-center justify-center gap-[6px] rounded-[6px] bg-[hsl(var(--primary))] px-3 text-[13px] font-medium text-[hsl(var(--primary-fg))] transition-opacity duration-150 hover:opacity-90">
+        <button
+          className="inline-flex h-8 items-center justify-center gap-[6px] rounded-[6px] bg-[hsl(var(--primary))] px-3 text-[13px] font-medium text-[hsl(var(--primary-fg))] transition-opacity duration-150 hover:opacity-90"
+          type="button"
+          onClick={onCreateTask}
+        >
           <Plus size={14} strokeWidth={1.6} />
           Nova task
         </button>
@@ -233,7 +286,15 @@ function Topbar({ search, onSearchChange }: TopbarProps) {
   )
 }
 
-function TaskSectionCard({ section }: { section: TaskSection }) {
+function TaskSectionCard({
+  section,
+  onCreateTask,
+  onEditTask,
+}: {
+  section: TaskSection
+  onCreateTask(status: TaskStatus): void
+  onEditTask(task: Task): void
+}) {
   return (
     <section className="mb-[14px] overflow-hidden rounded-[8px] border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
       <div className="flex items-center gap-[9px] border-b border-[hsl(var(--border))] bg-[hsl(var(--subtle))] px-4 py-[11px]">
@@ -243,7 +304,11 @@ function TaskSectionCard({ section }: { section: TaskSection }) {
         <span className="rounded-full bg-[hsl(var(--muted))] px-[7px] py-px font-mono text-[11px] leading-[1.4] text-[hsl(var(--muted-fg))]">
           {section.tasks.length}
         </span>
-        <button className="ml-auto text-[hsl(var(--muted-fg))] transition-colors duration-150 hover:text-[hsl(var(--fg))]">
+        <button
+          className="ml-auto text-[hsl(var(--muted-fg))] transition-colors duration-150 hover:text-[hsl(var(--fg))]"
+          type="button"
+          onClick={() => onCreateTask(section.status)}
+        >
           <Plus size={14} strokeWidth={1.6} />
         </button>
       </div>
@@ -268,7 +333,7 @@ function TaskSectionCard({ section }: { section: TaskSection }) {
             </tr>
           )}
           {section.tasks.map((task, index) => (
-            <TaskRow key={task.id} task={task} isLast={index === section.tasks.length - 1} />
+            <TaskRow key={task.id} task={task} isLast={index === section.tasks.length - 1} onEditTask={onEditTask} />
           ))}
         </tbody>
       </table>
@@ -281,6 +346,8 @@ type BoardColumnProps = {
   draggingTaskId: string | null
   isDropTarget: boolean
   onDragStart(taskId: string): void
+  onCreateTask(status: TaskStatus): void
+  onEditTask(task: Task): void
   onDragEnd(): void
   onDragOver(status: TaskStatus | null): void
   onDrop(status: TaskStatus): void
@@ -291,6 +358,8 @@ function BoardColumn({
   draggingTaskId,
   isDropTarget,
   onDragStart,
+  onCreateTask,
+  onEditTask,
   onDragEnd,
   onDragOver,
   onDrop,
@@ -327,7 +396,11 @@ function BoardColumn({
         <span className="rounded-full bg-[hsl(var(--muted))] px-[7px] py-px font-mono text-[11px] leading-[1.4] text-[hsl(var(--muted-fg))]">
           {section.tasks.length}
         </span>
-        <button className="ml-auto text-[hsl(var(--muted-fg))] transition-colors duration-150 hover:text-[hsl(var(--fg))]">
+        <button
+          className="ml-auto text-[hsl(var(--muted-fg))] transition-colors duration-150 hover:text-[hsl(var(--fg))]"
+          type="button"
+          onClick={() => onCreateTask(section.status)}
+        >
           <Plus size={14} strokeWidth={1.6} />
         </button>
       </div>
@@ -344,6 +417,7 @@ function BoardColumn({
           task={task}
           isDragging={draggingTaskId === task.id}
           onDragStart={onDragStart}
+          onEditTask={onEditTask}
           onDragEnd={onDragEnd}
         />
       ))}
@@ -355,16 +429,18 @@ type TaskCardProps = {
   task: Task
   isDragging: boolean
   onDragStart(taskId: string): void
+  onEditTask(task: Task): void
   onDragEnd(): void
 }
 
-function TaskCard({ task, isDragging, onDragStart, onDragEnd }: TaskCardProps) {
+function TaskCard({ task, isDragging, onDragStart, onEditTask, onDragEnd }: TaskCardProps) {
   return (
     <article
       className={`flex cursor-grab flex-col gap-2 rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-[11px] transition-[border-color,box-shadow,transform,opacity] duration-150 hover:border-[hsl(var(--border-strong))] ${
         isDragging ? 'cursor-grabbing opacity-50' : ''
       }`}
       draggable
+      onClick={() => onEditTask(task)}
       onDragStart={(event) => {
         event.dataTransfer.effectAllowed = 'move'
         event.dataTransfer.setData('text/plain', task.id)
@@ -401,11 +477,19 @@ function TableHead({ children, className = '' }: { children?: string; className?
   )
 }
 
-function TaskRow({ task, isLast }: { task: Task; isLast: boolean }) {
+function TaskRow({
+  task,
+  isLast,
+  onEditTask,
+}: {
+  task: Task
+  isLast: boolean
+  onEditTask(task: Task): void
+}) {
   const isDone = task.status === TaskStatus.DONE
 
   return (
-    <tr className="group">
+    <tr className="group cursor-pointer" onClick={() => onEditTask(task)}>
       <td className={tableCellClass(isLast)}>
         <span
           className={`flex size-[14px] items-center justify-center rounded-[4px] border-[1.5px] ${
@@ -440,7 +524,11 @@ function TaskRow({ task, isLast }: { task: Task; isLast: boolean }) {
         <PriorityBadge priority={task.priority} />
       </td>
       <td className={`${tableCellClass(isLast)} text-right text-[hsl(var(--muted-fg))]`}>
-        <button className="inline-flex size-[26px] items-center justify-center rounded-[6px] transition-colors duration-150 hover:bg-[hsl(var(--muted))]">
+        <button
+          className="inline-flex size-[26px] items-center justify-center rounded-[6px] transition-colors duration-150 hover:bg-[hsl(var(--muted))]"
+          type="button"
+          onClick={(event) => event.stopPropagation()}
+        >
           <MoreHorizontal size={14} strokeWidth={1.6} />
         </button>
       </td>

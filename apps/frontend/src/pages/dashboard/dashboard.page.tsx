@@ -1,12 +1,17 @@
 import { MoreHorizontal, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { routes } from '@/app/routes'
+import { EditListDrawer } from '@/components/drawers/edit-list-drawer'
+import { NewListDrawer } from '@/components/drawers/new-list-drawer'
 import { AppLayoutContext, DashboardListSummary } from '@/types/dashboard'
 
 export function DashboardPage() {
-  const { lists, isLoading, error } = useOutletContext<AppLayoutContext>()
+  const { lists, isLoading, error, reloadLayoutData } = useOutletContext<AppLayoutContext>()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
+  const [isNewListDrawerOpen, setIsNewListDrawerOpen] = useState(false)
+  const [selectedList, setSelectedList] = useState<DashboardListSummary | null>(null)
 
   const visibleLists = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -24,7 +29,7 @@ export function DashboardPage() {
 
   return (
     <>
-      <Topbar search={search} onSearchChange={setSearch} />
+      <Topbar search={search} onSearchChange={setSearch} onCreateList={() => setIsNewListDrawerOpen(true)} />
       <section className="flex-1 overflow-auto px-7 pb-8 pt-6">
         <div className="mb-5 flex items-end gap-4">
           <div>
@@ -45,12 +50,30 @@ export function DashboardPage() {
         {!isLoading && !error && (
           <div className="grid grid-cols-3 gap-[14px]">
             {visibleLists.map((list) => (
-              <ListCard key={list.id} list={list} />
+              <ListCard
+                key={list.id}
+                list={list}
+                onOpenList={(listId) => navigate(routes.list(listId))}
+                onEditList={setSelectedList}
+              />
             ))}
-            <NewListCard />
+            <NewListCard onClick={() => setIsNewListDrawerOpen(true)} />
           </div>
         )}
       </section>
+      {isNewListDrawerOpen && (
+        <NewListDrawer onClose={() => setIsNewListDrawerOpen(false)} onCreated={reloadLayoutData} />
+      )}
+      {selectedList && (
+        <EditListDrawer
+          list={selectedList}
+          onClose={() => setSelectedList(null)}
+          onSaved={async () => {
+            await reloadLayoutData()
+            setSelectedList(null)
+          }}
+        />
+      )}
     </>
   )
 }
@@ -58,9 +81,10 @@ export function DashboardPage() {
 type TopbarProps = {
   search: string
   onSearchChange(search: string): void
+  onCreateList(): void
 }
 
-function Topbar({ search, onSearchChange }: TopbarProps) {
+function Topbar({ search, onSearchChange, onCreateList }: TopbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-6">
       <label className="flex h-[30px] w-full max-w-[360px] items-center gap-2 rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-[11px] text-[13px] text-[hsl(var(--muted-fg))]">
@@ -75,7 +99,11 @@ function Topbar({ search, onSearchChange }: TopbarProps) {
           ⌘K
         </span>
       </label>
-      <button className="ml-auto inline-flex h-8 items-center justify-center gap-[6px] rounded-[6px] bg-[hsl(var(--primary))] px-3 text-[13px] font-medium text-[hsl(var(--primary-fg))] transition-opacity duration-150 hover:opacity-90">
+      <button
+        className="ml-auto inline-flex h-8 items-center justify-center gap-[6px] rounded-[6px] bg-[hsl(var(--primary))] px-3 text-[13px] font-medium text-[hsl(var(--primary-fg))] transition-opacity duration-150 hover:opacity-90"
+        type="button"
+        onClick={onCreateList}
+      >
         <Plus size={14} strokeWidth={1.6} />
         Nova lista
       </button>
@@ -91,13 +119,29 @@ function DashboardMessage({ children }: { children: string }) {
   )
 }
 
-function ListCard({ list }: { list: DashboardListSummary }) {
+function ListCard({
+  list,
+  onOpenList,
+  onEditList,
+}: {
+  list: DashboardListSummary
+  onOpenList(listId: string): void
+  onEditList(list: DashboardListSummary): void
+}) {
   const percent = list.total > 0 ? Math.round((list.done / list.total) * 100) : 0
 
   return (
-    <Link
+    <article
       className="flex min-h-[132px] flex-col gap-[10px] rounded-[8px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 text-left transition-[border-color,transform] duration-150 hover:border-[hsl(var(--border-strong))]"
-      to={routes.list(list.id)}
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenList(list.id)}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return
+
+        event.preventDefault()
+        onOpenList(list.id)
+      }}
     >
       <div className="flex items-start gap-[10px]">
         <div
@@ -112,9 +156,16 @@ function ListCard({ list }: { list: DashboardListSummary }) {
             {list.description ?? 'Sem descrição.'}
           </p>
         </div>
-        <span className="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-[hsl(var(--muted-fg))] transition-colors duration-150 hover:bg-[hsl(var(--muted))]">
+        <button
+          className="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-[hsl(var(--muted-fg))] transition-colors duration-150 hover:bg-[hsl(var(--muted))]"
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            onEditList(list)
+          }}
+        >
           <MoreHorizontal size={14} strokeWidth={1.6} />
-        </span>
+        </button>
       </div>
 
       <div className="mt-auto flex items-center gap-[10px] font-mono text-[11.5px] leading-[1.4] text-[hsl(var(--muted-fg))]">
@@ -129,13 +180,17 @@ function ListCard({ list }: { list: DashboardListSummary }) {
         </span>
         <span>{percent}%</span>
       </div>
-    </Link>
+    </article>
   )
 }
 
-function NewListCard() {
+function NewListCard({ onClick }: { onClick(): void }) {
   return (
-    <button className="flex min-h-[132px] flex-col items-center justify-center rounded-[8px] border border-dashed border-[hsl(var(--border-strong))] bg-transparent p-4 text-center text-[hsl(var(--muted-fg))] transition-colors duration-150 hover:bg-[hsl(var(--subtle))]">
+    <button
+      className="flex min-h-[132px] flex-col items-center justify-center rounded-[8px] border border-dashed border-[hsl(var(--border-strong))] bg-transparent p-4 text-center text-[hsl(var(--muted-fg))] transition-colors duration-150 hover:bg-[hsl(var(--subtle))]"
+      type="button"
+      onClick={onClick}
+    >
       <span className="mb-[6px] flex size-8 items-center justify-center rounded-[7px] border border-dashed border-[hsl(var(--border-strong))]">
         <Plus size={14} strokeWidth={1.6} />
       </span>
