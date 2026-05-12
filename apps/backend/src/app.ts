@@ -1,5 +1,6 @@
 import cookieParser from 'cookie-parser'
 import express from 'express'
+import helmet from 'helmet'
 import { errorHandler } from '@/adapters/input/http/error-handler'
 import { globalRateLimitMiddleware } from '@/adapters/input/http/middlewares/rate-limit.middleware'
 import { sanitizeMiddleware } from '@/adapters/input/http/middlewares/sanitize.middleware'
@@ -10,6 +11,7 @@ export function createApp() {
   const app = express()
 
   app.set('trust proxy', 1)
+  app.use(helmet())
   app.use(globalRateLimitMiddleware)
   app.use(cookieParser())
   app.use(express.json({ limit: '5mb' }))

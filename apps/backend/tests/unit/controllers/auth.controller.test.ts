@@ -33,6 +33,23 @@ const mockRefreshUseCase: jest.Mocked<RefreshUseCasePort> = {
   execute: jest.fn(),
 }
 
+const accessCookieOptions = expect.objectContaining({
+  httpOnly: true,
+  sameSite: 'strict',
+  maxAge: 15 * 60 * 1000,
+})
+
+const refreshCookieOptions = expect.objectContaining({
+  httpOnly: true,
+  sameSite: 'strict',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+})
+
+const clearCookieOptions = expect.objectContaining({
+  httpOnly: true,
+  sameSite: 'strict',
+})
+
 function createResponse(): MockResponse {
   const response = {
     status: jest.fn().mockReturnThis(),
@@ -168,9 +185,9 @@ describe('AuthController', () => {
       message: 'Success',
       data: { user: output.user },
     })
-    expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token', expect.any(Object))
-    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token', expect.any(Object))
-    expect(res.cookie).toHaveBeenCalledWith('session_id', 'session-id', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token', accessCookieOptions)
+    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token', refreshCookieOptions)
+    expect(res.cookie).toHaveBeenCalledWith('session_id', 'session-id', refreshCookieOptions)
   })
 
   it('should return 200 when login succeeds', async () => {
@@ -202,9 +219,9 @@ describe('AuthController', () => {
       message: 'Success',
       data: { user: output.user },
     })
-    expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token', expect.any(Object))
-    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token', expect.any(Object))
-    expect(res.cookie).toHaveBeenCalledWith('session_id', 'session-id', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token', accessCookieOptions)
+    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token', refreshCookieOptions)
+    expect(res.cookie).toHaveBeenCalledWith('session_id', 'session-id', refreshCookieOptions)
   })
 
   it('should return 200 when refresh succeeds', async () => {
@@ -232,9 +249,9 @@ describe('AuthController', () => {
       userAgent: 'jest-agent',
       ipAddress: '127.0.0.1',
     })
-    expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token', expect.any(Object))
-    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token', expect.any(Object))
-    expect(res.cookie).toHaveBeenCalledWith('session_id', 'session-id', expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token', accessCookieOptions)
+    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token', refreshCookieOptions)
+    expect(res.cookie).toHaveBeenCalledWith('session_id', 'session-id', refreshCookieOptions)
     expect(res.json).toHaveBeenCalledWith({
       status: 'success',
       message: 'Success',
@@ -264,8 +281,8 @@ describe('AuthController', () => {
       message: 'Success',
       data: output,
     })
-    expect(res.clearCookie).toHaveBeenCalledWith('access_token', expect.any(Object))
-    expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', expect.any(Object))
-    expect(res.clearCookie).toHaveBeenCalledWith('session_id', expect.any(Object))
+    expect(res.clearCookie).toHaveBeenCalledWith('access_token', clearCookieOptions)
+    expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', clearCookieOptions)
+    expect(res.clearCookie).toHaveBeenCalledWith('session_id', clearCookieOptions)
   })
 })
