@@ -2,6 +2,8 @@ import { LoginInput } from '@/core/application/usecases/auth/login/login.input'
 import { LoginOutput } from '@/core/application/usecases/auth/login/login.output'
 import { LogoutInput } from '@/core/application/usecases/auth/logout/logout.input'
 import { LogoutOutput } from '@/core/application/usecases/auth/logout/logout.output'
+import { MeInput } from '@/core/application/usecases/auth/me/me.input'
+import { MeOutput } from '@/core/application/usecases/auth/me/me.output'
 import { RefreshInput } from '@/core/application/usecases/auth/refresh/refresh.input'
 import { RefreshOutput } from '@/core/application/usecases/auth/refresh/refresh.output'
 import { RegisterInput } from '@/core/application/usecases/auth/register/register.input'
@@ -21,4 +23,8 @@ export interface LogoutUseCasePort {
 
 export interface RefreshUseCasePort {
   execute(input: RefreshInput): Promise<RefreshOutput>
+}
+
+export interface MeUseCasePort {
+  execute(input: MeInput): Promise<MeOutput>
 }

@@ -1,5 +1,6 @@
 import { LoginInput } from '@/core/application/usecases/auth/login/login.input'
 import { LogoutInput } from '@/core/application/usecases/auth/logout/logout.input'
+import { MeInput } from '@/core/application/usecases/auth/me/me.input'
 import { RefreshInput } from '@/core/application/usecases/auth/refresh/refresh.input'
 import { RegisterInput } from '@/core/application/usecases/auth/register/register.input'
 import { LoginSchema, LogoutSchema, RefreshSchema, RegisterSchema } from '../schemas/auth.schema'
@@ -46,5 +47,9 @@ export const authMapper = {
       sessionId: body.session_id,
       userId,
     }
+  },
+
+  toMeInput(userId: string): MeInput {
+    return { userId }
   },
 }

@@ -22,6 +22,12 @@ export function defineAuthRoutes(controller: AuthController) {
       handler: (req, res) => controller.logout(req, res),
     },
     {
+      method: ERouterMethod.GET,
+      url: '/me',
+      authMethod: EAuthMethod.OPEN,
+      handler: (req, res) => controller.me(req, res),
+    },
+    {
       method: ERouterMethod.POST,
       url: '/refresh',
       authMethod: EAuthMethod.PUBLIC,

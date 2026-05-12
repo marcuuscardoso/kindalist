@@ -4,10 +4,13 @@ import { errorHandler } from '@/adapters/input/http/error-handler'
 import {
   LoginUseCasePort,
   LogoutUseCasePort,
+  MeUseCasePort,
   RefreshUseCasePort,
   RegisterUseCasePort,
 } from '@/core/application/ports/input/auth.usecase.port'
+import { Role } from '@/core/domain/enums/user-role.enum'
 import { ConflictException } from '@/core/domain/errors/conflict.error'
+import { NotFoundException } from '@/core/domain/errors/not-found.error'
 import { UnauthorizedException } from '@/core/domain/errors/unauthorized.error'
 
 type MockResponse = Response & {
@@ -30,6 +33,10 @@ const mockLogoutUseCase: jest.Mocked<LogoutUseCasePort> = {
 }
 
 const mockRefreshUseCase: jest.Mocked<RefreshUseCasePort> = {
+  execute: jest.fn(),
+}
+
+const mockMeUseCase: jest.Mocked<MeUseCasePort> = {
   execute: jest.fn(),
 }
 
@@ -87,6 +94,7 @@ describe('AuthController', () => {
       mockLoginUseCase,
       mockLogoutUseCase,
       mockRefreshUseCase,
+      mockMeUseCase,
     )
   })
 
@@ -146,6 +154,19 @@ describe('AuthController', () => {
     await executeWithErrorHandler(() => controller.logout(req, res), res)
 
     expect(res.status).toHaveBeenCalledWith(403)
+  })
+
+  it('should return 404 when me usecase throws NotFoundException', async () => {
+    const req = createRequest({
+      user: { userId: 'missing-user-id', role: 'MEMBER' },
+    })
+    const res = createResponse()
+
+    mockMeUseCase.execute.mockRejectedValue(new NotFoundException('User'))
+
+    await executeWithErrorHandler(() => controller.me(req, res), res)
+
+    expect(res.status).toHaveBeenCalledWith(404)
   })
 
   it('should return 201 when register succeeds', async () => {
@@ -284,5 +305,32 @@ describe('AuthController', () => {
     expect(res.clearCookie).toHaveBeenCalledWith('access_token', clearCookieOptions)
     expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', clearCookieOptions)
     expect(res.clearCookie).toHaveBeenCalledWith('session_id', clearCookieOptions)
+  })
+
+  it('should return 200 when me succeeds', async () => {
+    const output = {
+      user: {
+        id: 'user-id',
+        name: 'John Doe',
+        email: 'john@example.com',
+        role: Role.MEMBER,
+      },
+    }
+    const req = createRequest({
+      user: { userId: 'user-id', role: 'MEMBER' },
+    })
+    const res = createResponse()
+
+    mockMeUseCase.execute.mockResolvedValue(output)
+
+    await controller.me(req, res)
+
+    expect(mockMeUseCase.execute).toHaveBeenCalledWith({ userId: 'user-id' })
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({
+      status: 'success',
+      message: 'Success',
+      data: output,
+    })
   })
 })

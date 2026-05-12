@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import {
   LoginUseCasePort,
   LogoutUseCasePort,
+  MeUseCasePort,
   RefreshUseCasePort,
   RegisterUseCasePort,
 } from '@/core/application/ports/input/auth.usecase.port'
@@ -16,6 +17,7 @@ export class AuthController {
     private readonly loginUseCase: LoginUseCasePort,
     private readonly logoutUseCase: LogoutUseCasePort,
     private readonly refreshUseCase: RefreshUseCasePort,
+    private readonly meUseCase: MeUseCasePort,
   ) {}
 
   async register(req: Request, res: Response) {
@@ -48,5 +50,12 @@ export class AuthController {
     const output = await this.refreshUseCase.execute(input)
 
     return authCookies.set(res.status(200), output).json(apiResponse.success({ success: true }))
+  }
+
+  async me(req: Request, res: Response) {
+    const input = authMapper.toMeInput(req.user.userId)
+    const output = await this.meUseCase.execute(input)
+
+    return res.status(200).json(apiResponse.success(output))
   }
 }

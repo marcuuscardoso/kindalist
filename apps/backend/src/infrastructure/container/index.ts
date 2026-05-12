@@ -7,6 +7,7 @@ import { TaskPrismaRepository } from '@/adapters/output/prisma/repositories/task
 import { UserPrismaRepository } from '@/adapters/output/prisma/repositories/user.prisma.repository'
 import { LoginUseCase } from '@/core/application/usecases/auth/login/login.usecase'
 import { LogoutUseCase } from '@/core/application/usecases/auth/logout/logout.usecase'
+import { MeUseCase } from '@/core/application/usecases/auth/me/me.usecase'
 import { RefreshUseCase } from '@/core/application/usecases/auth/refresh/refresh.usecase'
 import { RegisterUseCase } from '@/core/application/usecases/auth/register/register.usecase'
 import { ArchiveListUseCase } from '@/core/application/usecases/list/archive-list/archive-list.usecase'
@@ -40,6 +41,7 @@ const registerUseCase = new RegisterUseCase(
 const loginUseCase = new LoginUseCase(userRepository, sessionRepository, passwordHasher, tokenService)
 const logoutUseCase = new LogoutUseCase(sessionRepository)
 const refreshUseCase = new RefreshUseCase(sessionRepository, userRepository, tokenService, passwordHasher)
+const meUseCase = new MeUseCase(userRepository)
 
 const createListUseCase = new CreateListUseCase(listRepository)
 const getListsUseCase = new GetListsUseCase(listRepository)
@@ -58,6 +60,7 @@ export const authController = new AuthController(
   loginUseCase,
   logoutUseCase,
   refreshUseCase,
+  meUseCase,
 )
 
 export const listController = new ListController(
