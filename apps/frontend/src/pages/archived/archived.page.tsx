@@ -1,5 +1,5 @@
-import { Archive, Filter, Inbox, RotateCcw, Search, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Archive, Inbox, RotateCcw, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { listService } from '@/services/list.service'
 import { taskService } from '@/services/task.service'
@@ -33,7 +33,6 @@ function toArchivedList(list: List, tasks: Task[], index: number): ArchivedListV
 
 export function ArchivedPage() {
   const { reloadLayoutData } = useOutletContext<AppLayoutContext>()
-  const [search, setSearch] = useState('')
   const [lists, setLists] = useState<ArchivedListView[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -73,18 +72,6 @@ export function ArchivedPage() {
     }
   }, [])
 
-  const visibleLists = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return lists
-
-    return lists.filter((list) => {
-      const title = list.title.toLowerCase()
-      const description = list.description?.toLowerCase() ?? ''
-
-      return title.includes(query) || description.includes(query)
-    })
-  }, [lists, search])
-
   const totalTasks = lists.reduce((total, list) => total + list.total, 0)
 
   async function restoreList(listId: string) {
@@ -101,7 +88,7 @@ export function ArchivedPage() {
 
   return (
     <>
-      <Topbar search={search} onSearchChange={setSearch} />
+      <Topbar />
       <section className="flex-1 overflow-auto px-7 pb-8 pt-6">
         <div className="mb-5">
           <h1 className="text-[22px] font-semibold leading-[1.25] tracking-[-0.02em]">Listas arquivadas</h1>
@@ -124,7 +111,7 @@ export function ArchivedPage() {
                 <Archive size={13} strokeWidth={1.6} className="text-[hsl(var(--muted-fg))]" />
                 <h4 className="text-[13px] font-semibold leading-[1.4]">Tudo arquivado</h4>
                 <span className="rounded-full bg-[hsl(var(--muted))] px-[7px] py-px font-mono text-[11px] leading-[1.4] text-[hsl(var(--muted-fg))]">
-                  {visibleLists.length}
+                  {lists.length}
                 </span>
               </div>
 
@@ -139,7 +126,7 @@ export function ArchivedPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleLists.length === 0 && (
+                  {lists.length === 0 && (
                     <tr>
                       <td
                         className="px-[14px] py-[18px] text-center text-[13px] text-[hsl(var(--muted-fg))]"
@@ -150,11 +137,11 @@ export function ArchivedPage() {
                     </tr>
                   )}
 
-                  {visibleLists.map((list, index) => (
+                  {lists.map((list, index) => (
                     <ArchivedRow
                       key={list.id}
                       list={list}
-                      isLast={index === visibleLists.length - 1}
+                      isLast={index === lists.length - 1}
                       onRestore={() => void restoreList(list.id)}
                       onDelete={() => void deleteList(list.id)}
                     />
@@ -177,32 +164,9 @@ export function ArchivedPage() {
   )
 }
 
-type TopbarProps = {
-  search: string
-  onSearchChange(search: string): void
-}
-
-function Topbar({ search, onSearchChange }: TopbarProps) {
+function Topbar() {
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-6">
-      <label className="flex h-[30px] w-full max-w-[360px] items-center gap-2 rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-[11px] text-[13px] text-[hsl(var(--muted-fg))]">
-        <Search size={14} strokeWidth={1.6} />
-        <input
-          className="min-w-0 flex-1 bg-transparent text-[hsl(var(--fg))] outline-none placeholder:text-[hsl(var(--muted-fg))]"
-          value={search}
-          placeholder="Buscar tarefas, listas..."
-          onChange={(event) => onSearchChange(event.target.value)}
-        />
-        <span className="rounded bg-[hsl(var(--muted))] px-[5px] py-px font-mono text-[11px] leading-[1.4]">
-          ⌘K
-        </span>
-      </label>
-
-      <button className="ml-auto inline-flex h-8 items-center justify-center gap-[6px] rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-3 text-[13px] font-medium text-[hsl(var(--fg))] transition-colors duration-150 hover:bg-[hsl(var(--muted))]">
-        <Filter size={13} strokeWidth={1.6} />
-        Filtros
-      </button>
-    </header>
+    <header className="h-14 shrink-0 border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))]" />
   )
 }
 

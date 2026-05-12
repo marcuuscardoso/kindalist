@@ -1,4 +1,4 @@
-import { Archive, Home, LogOut, Settings } from 'lucide-react'
+import { Archive, Home, LogOut } from 'lucide-react'
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { routes } from '@/app/routes'
@@ -109,10 +109,6 @@ function getAsideLinks(lists: DashboardListSummary[], archivedCount: number): As
         text: 'Arquivadas',
         icon: <Archive size={15} strokeWidth={1.6} />,
         count: String(archivedCount),
-      },
-      {
-        text: 'Configurações',
-        icon: <Settings size={15} strokeWidth={1.6} />,
       },
     ],
   }
