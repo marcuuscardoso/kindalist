@@ -2,6 +2,7 @@ import { Express } from 'express'
 import { AuthController } from '../controllers/auth.controller'
 import { ListController } from '../controllers/list.controller'
 import { TaskController } from '../controllers/task.controller'
+import { authRateLimitMiddleware } from '../middlewares/rate-limit.middleware'
 import { defineAuthRoutes } from './auth.routes'
 import { defineListRoutes } from './list.routes'
 import { defineTaskRoutes } from './task.routes'
@@ -13,7 +14,7 @@ type Controllers = {
 }
 
 export function registerRoutes(app: Express, controllers: Controllers): void {
-  app.use('/auth', defineAuthRoutes(controllers.authController))
+  app.use('/auth', authRateLimitMiddleware, defineAuthRoutes(controllers.authController))
   app.use('/lists', defineListRoutes(controllers.listController))
   app.use('/lists/:listId/tasks', defineTaskRoutes(controllers.taskController))
 }
