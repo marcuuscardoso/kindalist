@@ -1,7 +1,8 @@
-import { Archive, ChevronDown, Home, Settings } from 'lucide-react'
+import { Archive, Home, LogOut, Settings } from 'lucide-react'
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { routes } from '@/app/routes'
+import { useAuth } from '@/hooks/use-auth'
 import { AuthUser } from '@/types/auth'
 import { DashboardListSummary } from '@/types/dashboard'
 
@@ -28,6 +29,7 @@ type AppSidebarProps = {
 
 export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
   const location = useLocation()
+  const { logout } = useAuth()
   const pageUrl = getCurrentPageUrl(location.pathname)
   const asideLinks = getAsideLinks(lists, archivedCount)
 
@@ -69,7 +71,10 @@ export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
         ))}
       </nav>
 
-      <button className="mt-auto flex items-center gap-[9px] rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] p-2 text-left transition-colors duration-150 hover:border-[hsl(var(--border-strong))]">
+      <button
+        onClick={logout}
+        className="mt-auto flex items-center gap-[9px] rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] p-2 text-left transition-colors duration-150 hover:border-[hsl(var(--border-strong))]"
+      >
         <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-300 to-slate-500 text-[11px] font-semibold text-white">
           {getInitials(user.name)}
         </div>
@@ -77,7 +82,7 @@ export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
           <div className="truncate text-[13px] font-medium leading-[1.15]">{user.name}</div>
           <div className="truncate text-[11px] leading-[1.4] text-[hsl(var(--muted-fg))]">{user.email}</div>
         </div>
-        <ChevronDown size={14} strokeWidth={1.6} className="shrink-0 text-[hsl(var(--muted-fg))]" />
+        <LogOut size={14} strokeWidth={1.6} className="shrink-0 text-[hsl(var(--muted-fg))]" />
       </button>
     </aside>
   )
