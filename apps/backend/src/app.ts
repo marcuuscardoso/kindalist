@@ -1,4 +1,5 @@
 import cookieParser from 'cookie-parser'
+import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
 import { errorHandler } from '@/adapters/input/http/error-handler'
@@ -6,12 +7,19 @@ import { globalRateLimitMiddleware } from '@/adapters/input/http/middlewares/rat
 import { sanitizeMiddleware } from '@/adapters/input/http/middlewares/sanitize.middleware'
 import { registerRoutes } from '@/adapters/input/http/routes'
 import { authController, listController, taskController } from '@/infrastructure/container'
+import { env } from '@/infrastructure/config/env'
 
 export function createApp() {
   const app = express()
 
   app.set('trust proxy', 1)
   app.use(helmet())
+  app.use(
+    cors({
+      origin: env.FRONTEND_URL,
+      credentials: true,
+    }),
+  )
   app.use(globalRateLimitMiddleware)
   app.use(cookieParser())
   app.use(express.json({ limit: '5mb' }))
