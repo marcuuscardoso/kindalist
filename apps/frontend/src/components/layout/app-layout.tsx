@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AppSidebar } from './app-sidebar'
 import { useAuth } from '@/hooks/use-auth'
 import { listService } from '@/services/list.service'
@@ -27,7 +27,7 @@ function toListSummary(list: List, tasks: Task[], index: number): DashboardListS
 
 export function AppLayout() {
   const { user } = useAuth()
-  const [context, setContext] = useState<AppLayoutContext>({
+  const [layoutData, setLayoutData] = useState<Omit<AppLayoutContext, 'reloadLayoutData'>>({
     lists: [],
     tasksByListId: {},
     archivedCount: 0,
@@ -35,53 +35,49 @@ export function AppLayout() {
     error: null,
   })
 
-  useEffect(() => {
-    let isMounted = true
+  const reloadLayoutData = useCallback(async () => {
+    setLayoutData((currentContext) => ({ ...currentContext, isLoading: true, error: null }))
 
-    async function loadLayoutData() {
-      setContext((currentContext) => ({ ...currentContext, isLoading: true, error: null }))
+    try {
+      const [activeLists, archivedLists] = await Promise.all([listService.getMany(false), listService.getMany(true)])
+      const listsWithTasks = await Promise.all(
+        activeLists.map(async (list, index) => ({
+          list,
+          index,
+          tasks: await taskService.getMany(list.id),
+        })),
+      )
 
-      try {
-        const [activeLists, archivedLists] = await Promise.all([listService.getMany(false), listService.getMany(true)])
-        const listsWithTasks = await Promise.all(
-          activeLists.map(async (list, index) => ({
-            list,
-            index,
-            tasks: await taskService.getMany(list.id),
-          })),
-        )
-
-        if (!isMounted) return
-
-        setContext({
-          lists: listsWithTasks.map(({ list, tasks, index }) => toListSummary(list, tasks, index)),
-          tasksByListId: Object.fromEntries(listsWithTasks.map(({ list, tasks }) => [list.id, tasks])),
-          archivedCount: archivedLists.length,
-          isLoading: false,
-          error: null,
-        })
-      } catch {
-        if (!isMounted) return
-        setContext((currentContext) => ({
-          ...currentContext,
-          isLoading: false,
-          error: 'Não foi possível carregar suas listas.',
-        }))
-      }
-    }
-
-    void loadLayoutData()
-
-    return () => {
-      isMounted = false
+      setLayoutData({
+        lists: listsWithTasks.map(({ list, tasks, index }) => toListSummary(list, tasks, index)),
+        tasksByListId: Object.fromEntries(listsWithTasks.map(({ list, tasks }) => [list.id, tasks])),
+        archivedCount: archivedLists.length,
+        isLoading: false,
+        error: null,
+      })
+    } catch {
+      setLayoutData((currentContext) => ({
+        ...currentContext,
+        isLoading: false,
+        error: 'Não foi possível carregar suas listas.',
+      }))
     }
   }, [])
+
+  useEffect(() => {
+    void reloadLayoutData()
+  }, [reloadLayoutData])
+
+  const context = useMemo<AppLayoutContext>(
+    () => ({ ...layoutData, reloadLayoutData }),
+    [layoutData, reloadLayoutData],
+  )
 
   if (!user) return null
 
   return (
     <div className="flex h-screen min-h-[720px] bg-[hsl(var(--bg))] text-[hsl(var(--fg))]">
-      <AppSidebar user={user} lists={context.lists} archivedCount={context.archivedCount} />
+      <AppSidebar user={user} lists={layoutData.lists} archivedCount={layoutData.archivedCount} />
       <main className="flex min-w-0 flex-1 flex-col">
         <Outlet context={context} />
       </main>

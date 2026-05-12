@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/app-layout'
+import { ArchivedPage } from '@/pages/archived/archived.page'
 import { LoginPage } from '@/pages/auth/login.page'
 import { RegisterPage } from '@/pages/auth/register.page'
 import { DashboardPage } from '@/pages/dashboard/dashboard.page'
@@ -42,6 +43,10 @@ export const router = createBrowserRouter([
           {
             path: '/app/lists/:listId',
             element: <ListViewPage />,
+          },
+          {
+            path: routes.archived,
+            element: <ArchivedPage />,
           },
         ],
       },

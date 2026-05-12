@@ -16,4 +16,5 @@ export type AppLayoutContext = {
   archivedCount: number
   isLoading: boolean
   error: string | null
+  reloadLayoutData(): Promise<void>
 }

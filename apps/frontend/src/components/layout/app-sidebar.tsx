@@ -1,9 +1,24 @@
 import { Archive, ChevronDown, Home, Settings } from 'lucide-react'
 import { ReactNode } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { routes } from '@/app/routes'
 import { AuthUser } from '@/types/auth'
 import { DashboardListSummary } from '@/types/dashboard'
+
+type AsideLink = {
+  link?: string
+  text: string
+  icon?: ReactNode
+  dotColor?: string
+  count?: string
+  className?: string
+}
+
+type AsideLinks = {
+  top: AsideLink[]
+  center: AsideLink[]
+  bottom: AsideLink[]
+}
 
 type AppSidebarProps = {
   user: AuthUser
@@ -12,9 +27,9 @@ type AppSidebarProps = {
 }
 
 export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
-  const { listId } = useParams()
   const location = useLocation()
-  const isHomeActive = location.pathname === routes.app || location.pathname === routes.list()
+  const pageUrl = getCurrentPageUrl(location.pathname)
+  const asideLinks = getAsideLinks(lists, archivedCount)
 
   return (
     <aside className="flex h-full w-[248px] shrink-0 flex-col gap-[6px] border-r border-[hsl(var(--border))] bg-[hsl(var(--subtle))] px-3 pb-3 pt-4">
@@ -31,23 +46,17 @@ export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
       </div>
 
       <nav className="flex flex-col gap-[6px]">
-        <SideItem active={isHomeActive} to={routes.app} icon={<Home size={15} strokeWidth={1.6} />} label="Home" />
+        {asideLinks.top.map((link) => (
+          <AsideItem key={link.text} link={link} active={pageUrl === link.link} />
+        ))}
       </nav>
 
       <div className="px-2 pb-[6px] pt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[hsl(var(--muted-fg))]">
         Listas
       </div>
       <nav className="flex flex-col gap-[6px]">
-        {lists.map((list) => (
-          <SideItem
-            key={list.id}
-            active={list.id === listId}
-            muted={list.id !== listId}
-            to={routes.list(list.id)}
-            dotColor={list.color}
-            label={list.title}
-            count={String(list.total)}
-          />
+        {asideLinks.center.map((link) => (
+          <AsideItem key={link.link} link={link} active={pageUrl === link.link} />
         ))}
       </nav>
 
@@ -55,8 +64,9 @@ export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
         Geral
       </div>
       <nav className="flex flex-col gap-[6px]">
-        <SideItem muted icon={<Archive size={15} strokeWidth={1.6} />} label="Arquivadas" count={String(archivedCount)} />
-        <SideItem muted icon={<Settings size={15} strokeWidth={1.6} />} label="Configurações" />
+        {asideLinks.bottom.map((link) => (
+          <AsideItem key={link.text} link={link} active={pageUrl === link.link} />
+        ))}
       </nav>
 
       <button className="mt-auto flex items-center gap-[9px] rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] p-2 text-left transition-colors duration-150 hover:border-[hsl(var(--border-strong))]">
@@ -73,40 +83,64 @@ export function AppSidebar({ user, lists, archivedCount }: AppSidebarProps) {
   )
 }
 
-type SideItemProps = {
-  label: string
-  to?: string
-  icon?: ReactNode
-  dotColor?: string
-  count?: string
-  active?: boolean
-  muted?: boolean
+function getAsideLinks(lists: DashboardListSummary[], archivedCount: number): AsideLinks {
+  return {
+    top: [
+      {
+        link: routes.app,
+        text: 'Home',
+        icon: <Home size={15} strokeWidth={1.6} />,
+      },
+    ],
+    center: lists.map((list) => ({
+      link: routes.list(list.id),
+      text: list.title,
+      dotColor: list.color,
+      count: String(list.total),
+    })),
+    bottom: [
+      {
+        link: routes.archived,
+        text: 'Arquivadas',
+        icon: <Archive size={15} strokeWidth={1.6} />,
+        count: String(archivedCount),
+      },
+      {
+        text: 'Configurações',
+        icon: <Settings size={15} strokeWidth={1.6} />,
+      },
+    ],
+  }
 }
 
-function SideItem({ label, to, icon, dotColor, count, active = false, muted = false }: SideItemProps) {
-  const className = `flex min-h-[30px] items-center gap-[9px] rounded-[6px] px-[9px] py-[7px] text-left text-[13.5px] leading-[1.2] transition-colors duration-150 hover:bg-[hsl(var(--accent))] ${
+function getCurrentPageUrl(pathname: string): string {
+  if (pathname === routes.list()) return routes.app
+
+  return pathname
+}
+
+function AsideItem({ link, active }: { link: AsideLink; active: boolean }) {
+  const className = `flex min-h-[30px] items-center gap-[9px] rounded-[6px] px-[9px] py-[7px] text-left text-[13.5px] leading-[1.2] transition-colors duration-150 hover:bg-[hsl(var(--accent))] ${link.className ?? ''} ${
         active
           ? 'bg-[hsl(var(--fg)/0.06)] font-medium text-[hsl(var(--fg))]'
-          : muted
-            ? 'font-normal text-[hsl(var(--muted-fg))]'
-            : 'font-[450] text-[hsl(var(--fg))]'
+          : 'font-normal text-[hsl(var(--muted-fg))]'
       }`
   const content = (
     <>
-      {icon}
-      {dotColor && <span className="size-2 rounded-full" style={{ backgroundColor: dotColor }} />}
-      <span className="truncate">{label}</span>
-      {count && (
+      {link.icon}
+      {link.dotColor && <span className="size-2 rounded-full" style={{ backgroundColor: link.dotColor }} />}
+      <span className="truncate">{link.text}</span>
+      {link.count && (
         <span className="ml-auto rounded-full bg-[hsl(var(--muted))] px-[7px] py-px font-mono text-[11px] leading-[1.4] text-[hsl(var(--muted-fg))]">
-          {count}
+          {link.count}
         </span>
       )}
     </>
   )
 
-  if (to) {
+  if (link.link) {
     return (
-      <Link className={className} to={to}>
+      <Link className={className} to={link.link}>
         {content}
       </Link>
     )
