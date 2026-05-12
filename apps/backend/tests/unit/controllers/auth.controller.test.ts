@@ -105,7 +105,7 @@ describe('AuthController', () => {
       body: {
         name: 'John Doe',
         email: 'john@example.com',
-        password: 'secret',
+        password: 'Password123!',
       },
     })
     const res = createResponse()
@@ -146,7 +146,7 @@ describe('AuthController', () => {
       body: {
         name: 'John Doe',
         email: 'john@example.com',
-        password: 'secret',
+        password: 'Password123!',
       },
     })
     const res = createResponse()
@@ -158,7 +158,7 @@ describe('AuthController', () => {
     expect(mockRegisterUseCase.execute).toHaveBeenCalledWith({
       name: 'John Doe',
       email: 'john@example.com',
-      password: 'secret',
+      password: 'Password123!',
       userAgent: 'jest-agent',
       ipAddress: '127.0.0.1',
     })
@@ -187,7 +187,7 @@ describe('AuthController', () => {
     const req = createRequest({
       body: {
         email: 'john@example.com',
-        password: 'secret',
+        password: 'Password123!',
       },
     })
     const res = createResponse()

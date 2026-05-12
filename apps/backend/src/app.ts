@@ -9,7 +9,7 @@ import { authController, listController, taskController } from '@/infrastructure
 export function createApp() {
   const app = express()
 
-  app.set('trust proxy', true)
+  app.set('trust proxy', 1)
   app.use(globalRateLimitMiddleware)
   app.use(cookieParser())
   app.use(express.json({ limit: '5mb' }))
