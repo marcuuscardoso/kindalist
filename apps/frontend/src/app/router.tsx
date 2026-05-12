@@ -1,10 +1,10 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { AppLayout } from '@/components/layout/app-layout'
 import { LoginPage } from '@/pages/auth/login.page'
 import { RegisterPage } from '@/pages/auth/register.page'
+import { DashboardPage } from '@/pages/dashboard/dashboard.page'
 import { AuthGuard, GuestGuard } from './auth-guard'
 import { routes } from './routes'
-
-const EmptyRoute = () => null
 
 export const router = createBrowserRouter([
   {
@@ -28,16 +28,21 @@ export const router = createBrowserRouter([
     element: <AuthGuard />,
     children: [
       {
-        path: routes.app,
-        element: <EmptyRoute />,
-      },
-      {
-        path: '/app/lists',
-        element: <EmptyRoute />,
-      },
-      {
-        path: '/app/lists/:listId',
-        element: <EmptyRoute />,
+        element: <AppLayout />,
+        children: [
+          {
+            path: routes.app,
+            element: <DashboardPage />,
+          },
+          {
+            path: '/app/lists',
+            element: <DashboardPage />,
+          },
+          {
+            path: '/app/lists/:listId',
+            element: <DashboardPage />,
+          },
+        ],
       },
     ],
   },
