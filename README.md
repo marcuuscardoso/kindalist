@@ -4,6 +4,8 @@ Sistema completo de gerenciamento de listas e tarefas desenvolvido como teste t�
 
 O projeto permite registro e autenticação de usuários, criação e organização de listas, criação de tarefas, visualização em lista ou board, arquivamento de listas e controle de sessão seguro com access token e refresh token via cookie.
 
+Uma collection do Postman com todos os endpoints está disponível na raiz do projeto: `kindalist.postman_collection.json`. Para usar, importe o arquivo diretamente no Postman.
+
 ## Índice
 
 - [Descrição](#descrição)

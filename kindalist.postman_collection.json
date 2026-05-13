@@ -1,0 +1,257 @@
+{
+  "info": {
+    "name": "Kindalist API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "http://localhost:3000/auth/register", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"Password1!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "http://localhost:3000/auth/login", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"Password1!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "http://localhost:3000/auth/logout", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["auth", "logout"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"session_id\": \"session-id-here\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "http://localhost:3000/auth/me", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "http://localhost:3000/auth/refresh", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["auth", "refresh"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"session_id\": \"session-id-here\",\n  \"refresh_token\": \"refresh-token-here\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lists",
+      "item": [
+        {
+          "name": "Get Lists",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/lists?archived=false",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["lists"],
+              "query": [{ "key": "archived", "value": "false" }]
+            }
+          }
+        },
+        {
+          "name": "Create List",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "http://localhost:3000/lists", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["lists"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"title\": \"My List\",\n  \"description\": \"List description\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update List",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "http://localhost:3000/lists/:listId",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["lists", ":listId"],
+              "variable": [{ "key": "listId", "value": "list-id-here" }]
+            },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"title\": \"Updated title\",\n  \"description\": \"Updated description\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Archive List",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "http://localhost:3000/lists/:listId/archive",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["lists", ":listId", "archive"],
+              "variable": [{ "key": "listId", "value": "list-id-here" }]
+            },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"isArchived\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete List",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "http://localhost:3000/lists/:listId",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["lists", ":listId"],
+              "variable": [{ "key": "listId", "value": "list-id-here" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Get Tasks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/lists/:listId/tasks",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["lists", ":listId", "tasks"],
+              "variable": [{ "key": "listId", "value": "list-id-here" }]
+            }
+          }
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "http://localhost:3000/lists/:listId/tasks",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["lists", ":listId", "tasks"],
+              "variable": [{ "key": "listId", "value": "list-id-here" }]
+            },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"title\": \"My Task\",\n  \"description\": \"Task description\",\n  \"status\": \"TODO\",\n  \"priority\": \"MEDIUM\",\n  \"deadline\": \"2026-12-31T00:00:00.000Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Bulk Create Tasks",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "http://localhost:3000/lists/:listId/tasks/bulk",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["lists", ":listId", "tasks", "bulk"],
+              "variable": [{ "key": "listId", "value": "list-id-here" }]
+            },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"tasks\": [\n    {\n      \"title\": \"Task 1\",\n      \"status\": \"TODO\",\n      \"priority\": \"LOW\"\n    },\n    {\n      \"title\": \"Task 2\",\n      \"status\": \"IN_PROGRESS\",\n      \"priority\": \"HIGH\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "http://localhost:3000/lists/:listId/tasks/:taskId",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["lists", ":listId", "tasks", ":taskId"],
+              "variable": [
+                { "key": "listId", "value": "list-id-here" },
+                { "key": "taskId", "value": "task-id-here" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"title\": \"Updated title\",\n  \"status\": \"DONE\",\n  \"priority\": \"HIGH\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "http://localhost:3000/lists/:listId/tasks/:taskId",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["lists", ":listId", "tasks", ":taskId"],
+              "variable": [
+                { "key": "listId", "value": "list-id-here" },
+                { "key": "taskId", "value": "task-id-here" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
