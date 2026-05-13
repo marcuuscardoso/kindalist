@@ -43,7 +43,22 @@ O sistema permite:
 - **Docker** e **Docker Compose**
 - **MySQL** 8.x via Docker
 
-### Variáveis de Ambiente
+## Instalação e Inicialização
+
+### 1. Clone o repositório
+
+```bash
+git clone https://github.com/marcuuscardoso/kindalist.git
+cd kindalist
+```
+
+### 2. Instale as dependências
+
+```bash
+npm install
+```
+
+### 3. Variáveis de Ambiente
 
 Crie um arquivo `.env` em `apps/backend`:
 
@@ -74,28 +89,13 @@ Exemplo:
 VITE_API_URL=http://localhost:3000
 ```
 
-## Instalação e Inicialização
-
-### 1. Clone o repositório
-
-```bash
-git clone https://github.com/marcuuscardoso/kindalist.git
-cd kindalist
-```
-
-### 2. Instale as dependências
-
-```bash
-npm install
-```
-
-### 3. Inicie os serviços de infraestrutura
+### 4. Inicie os serviços de infraestrutura
 
 ```bash
 docker compose up -d
 ```
 
-### 4. Execute as migrações do banco
+### 5. Execute as migrações do banco
 
 ```bash
 cd apps/backend
@@ -104,7 +104,7 @@ npx prisma generate
 cd ../..
 ```
 
-### 5. Execute o backend
+### 6. Execute o backend
 
 ```bash
 npm run dev:backend
@@ -116,7 +116,7 @@ O backend estará disponível em:
 http://localhost:3000
 ```
 
-### 6. Execute o frontend
+### 7. Execute o frontend
 
 Em outro terminal:
 
