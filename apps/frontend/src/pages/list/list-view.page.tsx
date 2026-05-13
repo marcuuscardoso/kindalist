@@ -11,10 +11,11 @@ import {
   Columns3,
 } from 'lucide-react'
 import { DragEvent, useEffect, useMemo, useState } from 'react'
-import { Navigate, useOutletContext, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { routes } from '@/app/routes'
 import { CreateTaskDrawer } from '@/components/drawers/create-task-drawer'
 import { EditTaskDrawer } from '@/components/drawers/edit-task-drawer'
+import { listService } from '@/services/list.service'
 import { taskService } from '@/services/task.service'
 import { AppLayoutContext } from '@/types/dashboard'
 import { Task, TaskPriority, TaskStatus } from '@/types/task'
@@ -64,6 +65,7 @@ const sectionMeta = {
 
 export function ListViewPage() {
   const { listId } = useParams()
+  const navigate = useNavigate()
   const { lists, tasksByListId, isLoading, error, reloadLayoutData } = useOutletContext<AppLayoutContext>()
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('board')
@@ -134,11 +136,18 @@ export function ListViewPage() {
     void reloadLayoutData()
   }
 
+  async function handleArchive() {
+    if (!list) return
+    await listService.archive(list.id, { isArchived: true })
+    await reloadLayoutData()
+    navigate(routes.app)
+  }
+
   if (!isLoading && !list) return <Navigate to={routes.app} replace />
 
   return (
     <>
-      <Topbar search={search} onSearchChange={setSearch} onCreateTask={() => setCreateTaskStatus(TaskStatus.TODO)} />
+      <Topbar search={search} onSearchChange={setSearch} onCreateTask={() => setCreateTaskStatus(TaskStatus.TODO)} onArchive={() => void handleArchive()} />
       <section className="flex-1 overflow-auto px-7 pb-8 pt-6">
         {isLoading && <ListMessage>Carregando lista...</ListMessage>}
         {error && <ListMessage>{error}</ListMessage>}
@@ -250,9 +259,10 @@ type TopbarProps = {
   search: string
   onSearchChange(search: string): void
   onCreateTask(): void
+  onArchive(): void
 }
 
-function Topbar({ search, onSearchChange, onCreateTask }: TopbarProps) {
+function Topbar({ search, onSearchChange, onCreateTask, onArchive }: TopbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-6">
       <label className="flex h-[30px] w-full max-w-[360px] items-center gap-2 rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-[11px] text-[13px] text-[hsl(var(--muted-fg))]">
@@ -269,7 +279,11 @@ function Topbar({ search, onSearchChange, onCreateTask }: TopbarProps) {
       </label>
 
       <div className="ml-auto flex items-center gap-2">
-        <button className="inline-flex h-8 items-center justify-center gap-[6px] rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-3 text-[13px] font-medium text-[hsl(var(--fg))] transition-colors duration-150 hover:bg-[hsl(var(--muted))]">
+        <button
+          className="inline-flex h-8 items-center justify-center gap-[6px] rounded-[6px] border border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-3 text-[13px] font-medium text-[hsl(var(--fg))] transition-colors duration-150 hover:bg-[hsl(var(--muted))]"
+          type="button"
+          onClick={onArchive}
+        >
           <Archive size={14} strokeWidth={1.6} />
           Arquivar
         </button>
